@@ -1,6 +1,4 @@
-import asyncio
 import io
-import uuid
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -14,21 +12,21 @@ from app.utils.validators import validate_pdf_file
 
 # ── LocalFileStorage ─────────────────────────────────────────────────────────
 
-def test_local_storage_save_creates_file(tmp_path):
+@pytest.mark.asyncio
+async def test_local_storage_save_creates_file(tmp_path):
     storage = LocalFileStorage(str(tmp_path))
     content = b"%PDF-1.4 fake pdf content"
-    path = asyncio.get_event_loop().run_until_complete(
-        storage.save(content, suffix=".pdf")
-    )
+    path = await storage.save(content, suffix=".pdf")
     assert Path(tmp_path / path).exists()
     assert path.endswith(".pdf")
 
 
-def test_local_storage_save_uses_uuid_filename(tmp_path):
+@pytest.mark.asyncio
+async def test_local_storage_save_uses_uuid_filename(tmp_path):
     storage = LocalFileStorage(str(tmp_path))
     content = b"%PDF-1.4 content"
-    path1 = asyncio.get_event_loop().run_until_complete(storage.save(content, suffix=".pdf"))
-    path2 = asyncio.get_event_loop().run_until_complete(storage.save(content, suffix=".pdf"))
+    path1 = await storage.save(content, suffix=".pdf")
+    path2 = await storage.save(content, suffix=".pdf")
     assert path1 != path2
 
 
@@ -38,10 +36,11 @@ def test_local_storage_get_file_path(tmp_path):
     assert result == tmp_path / "abc.pdf"
 
 
-def test_local_storage_delete_removes_file(tmp_path):
+@pytest.mark.asyncio
+async def test_local_storage_delete_removes_file(tmp_path):
     storage = LocalFileStorage(str(tmp_path))
     content = b"%PDF-1.4 content"
-    path = asyncio.get_event_loop().run_until_complete(storage.save(content, suffix=".pdf"))
+    path = await storage.save(content, suffix=".pdf")
     full = tmp_path / path
     assert full.exists()
     storage.delete(path)

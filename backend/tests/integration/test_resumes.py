@@ -133,21 +133,27 @@ async def test_delete_resume_returns_204(client):
 
 
 @pytest.mark.asyncio
-async def test_reanalyze_triggers_ai_and_returns_detail(client):
+async def test_reanalyze_returns_parsed_data(client):
     token = await _register_and_login(client)
+    # Upload a resume first
     with patch("app.utils.validators.magic") as mock_magic, \
          patch("app.api.v1.routers.resumes._run_analysis", new_callable=AsyncMock):
         mock_magic.from_buffer.return_value = "application/pdf"
         upload = await client.post("/api/v1/resumes", headers=_auth(token), files=_pdf_file())
     resume_id = upload.json()["id"]
 
-    ai_response = '{"skills":["Python"],"experience":[],"education":[],"summary":"Dev."}'
-    with patch("app.services.resume_service.extract_text", return_value="resume text"), \
-         patch("app.services.resume_service.ResumeService.analyze.__wrapped__", create=True), \
-         patch("app.ai.client.ClaudeClient.complete", new_callable=AsyncMock, return_value=ai_response):
-        resp = await client.post(f"/api/v1/resumes/{resume_id}/analyze", headers=_auth(token))
+    # Call analyze endpoint with extract_text mocked
+    with patch("app.services.resume_service.extract_text", new_callable=AsyncMock) as mock_extract:
+        mock_extract.return_value = "Test resume content with Python and REST API experience"
+        resp = await client.post(
+            f"/api/v1/resumes/{resume_id}/analyze",
+            headers=_auth(token),
+        )
 
     assert resp.status_code == 200
+    body = resp.json()
+    assert "parsed_data" in body
+    assert isinstance(body["parsed_data"]["skills"], list)
 
 
 @pytest.mark.asyncio
