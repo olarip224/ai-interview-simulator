@@ -48,7 +48,7 @@ async def test_upload_returns_201(client):
             headers=_auth(token),
             files=_pdf_file(),
         )
-    assert resp.status_code == 201
+    assert resp.status_code == 202
     body = resp.json()
     assert "id" in body
     assert body["filename"] == "resume.pdf"
