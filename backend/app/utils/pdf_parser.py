@@ -13,5 +13,5 @@ def _extract_sync(file_path: str) -> str:
 
 
 async def extract_text(file_path: str) -> str:
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, partial(_extract_sync, file_path))
