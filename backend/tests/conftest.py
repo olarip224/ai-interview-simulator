@@ -1,10 +1,13 @@
 import asyncio
+from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from app.ai.dependencies import get_ai_client, get_file_storage
 from app.config import settings
 from app.database.session import get_db
 from app.main import create_app
@@ -58,12 +61,29 @@ async def client(engine):
                 await session.rollback()
                 raise
 
+    # Set up file storage mock
+    mock_storage = MagicMock()
+    mock_storage.save = AsyncMock(return_value="test.pdf")
+    mock_storage.get_file_path = MagicMock(return_value=Path("/tmp/test.pdf"))
+    mock_storage.delete = AsyncMock()
+
+    # Set up AI client mock
+    mock_ai = MagicMock()
+    mock_ai.complete = AsyncMock(
+        return_value='{"skills":["Python"],"experience":[],"education":[],"summary":"Test."}'
+    )
+
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_file_storage] = lambda: mock_storage
+    app.dependency_overrides[get_ai_client] = lambda: mock_ai
 
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as c:
         yield c
+
+    app.dependency_overrides.pop(get_file_storage, None)
+    app.dependency_overrides.pop(get_ai_client, None)
 
     async with engine.begin() as conn:
         for table in reversed(Base.metadata.sorted_tables):

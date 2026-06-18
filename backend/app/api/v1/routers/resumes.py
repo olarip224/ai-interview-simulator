@@ -33,10 +33,11 @@ async def _run_analysis(
             await ResumeService(session, file_storage, ai_client).analyze(resume)
             await session.commit()
         except Exception:
+            await session.rollback()
             logger.exception("Background resume analysis failed for %s", resume_id)
 
 
-@router.post("", response_model=ResumeResponse, status_code=201)
+@router.post("", response_model=ResumeResponse, status_code=202)
 async def upload_resume(
     file: UploadFile,
     background_tasks: BackgroundTasks,
@@ -55,11 +56,11 @@ async def upload_resume(
 async def list_resumes(
     current_user: CurrentUser,
     session: DB,
-    file_storage: Annotated[FileStorage, Depends(get_file_storage)],
-    ai_client: Annotated[AIClient, Depends(get_ai_client)],
 ) -> list[ResumeResponse]:
-    resumes = await ResumeService(session, file_storage, ai_client).list_for_user(current_user.id)
+    resumes = await ResumeService(session, None, None).list_for_user(current_user.id)
     return [ResumeResponse.model_validate(r) for r in resumes]
+
+
 
 
 @router.get("/{resume_id}", response_model=ResumeDetailResponse)
@@ -67,10 +68,8 @@ async def get_resume(
     resume_id: uuid.UUID,
     current_user: CurrentUser,
     session: DB,
-    file_storage: Annotated[FileStorage, Depends(get_file_storage)],
-    ai_client: Annotated[AIClient, Depends(get_ai_client)],
 ) -> ResumeDetailResponse:
-    resume = await ResumeService(session, file_storage, ai_client).get_by_id(resume_id, current_user.id)
+    resume = await ResumeService(session, None, None).get_by_id(resume_id, current_user.id)
     return ResumeDetailResponse.model_validate(resume)
 
 
