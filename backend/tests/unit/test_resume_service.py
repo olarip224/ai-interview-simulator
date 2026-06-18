@@ -62,7 +62,8 @@ async def test_analyze_calls_ai_and_updates_record():
     svc.repo.update_parsed = AsyncMock(return_value=mock_resume)
     ai_client.complete = AsyncMock(return_value='{"skills":["Python"],"experience":[],"education":[],"summary":"Dev."}')
 
-    with patch("app.services.resume_service.extract_text", return_value="resume text"):
+    with patch("app.services.resume_service.extract_text", new_callable=AsyncMock) as mock_extract:
+        mock_extract.return_value = "resume text"
         result = await svc.analyze(mock_resume)
 
     ai_client.complete.assert_awaited_once()
