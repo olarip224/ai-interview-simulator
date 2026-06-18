@@ -9,6 +9,7 @@ from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from app.models.auth import RefreshToken
+    from app.models.resume import Resume
 
 
 class User(Base, UUIDMixin, TimestampMixin):
@@ -28,4 +29,7 @@ class User(Base, UUIDMixin, TimestampMixin):
         "RefreshToken",
         back_populates="user",
         cascade="all, delete-orphan",
+    )
+    resumes: Mapped[list[Resume]] = relationship(
+        "Resume", back_populates="user", cascade="all, delete-orphan"
     )

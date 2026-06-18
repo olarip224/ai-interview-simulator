@@ -23,3 +23,8 @@ class ConflictError(AppError):
 class ForbiddenError(AppError):
     def __init__(self, message: str = "Access denied") -> None:
         super().__init__(message, status_code=403)
+
+
+class UploadError(AppError):
+    def __init__(self, message: str) -> None:
+        super().__init__(message, status_code=400)
