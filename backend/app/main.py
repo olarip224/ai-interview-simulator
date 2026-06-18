@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.routers import auth as auth_router
 from app.api.v1.routers import health as health_router
+from app.api.v1.routers import resumes as resumes_router
 from app.config import settings
 from app.database.redis import close_redis
 from app.middleware.error_handler import register_exception_handlers
@@ -47,6 +48,7 @@ def create_app() -> FastAPI:
         auth_router.router,
         prefix=f"{settings.API_PREFIX}/auth",
     )
+    app.include_router(resumes_router.router, prefix=f"{settings.API_PREFIX}/resumes")
 
     return app
 
