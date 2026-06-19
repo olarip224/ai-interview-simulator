@@ -87,7 +87,7 @@ async def reanalyze_resume(
     return ResumeDetailResponse.model_validate(resume)
 
 
-@router.delete("/{resume_id}", status_code=204)
+@router.delete("/{resume_id}", status_code=204, response_model=None)
 async def delete_resume(
     resume_id: uuid.UUID,
     current_user: CurrentUser,
