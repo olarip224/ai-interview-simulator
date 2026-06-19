@@ -18,3 +18,10 @@ class SessionStatus(StrEnum):
     ACTIVE = "active"
     COMPLETED = "completed"
     ABANDONED = "abandoned"
+
+
+class QuestionType(StrEnum):
+    TECHNICAL = "technical"
+    BEHAVIORAL = "behavioral"
+    CODING = "coding"
+    FOLLOW_UP = "follow_up"
