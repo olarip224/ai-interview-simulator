@@ -37,6 +37,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_interview_sessions_user_id", "interview_sessions", ["user_id"])
     op.create_index("ix_interview_sessions_user_id_status", "interview_sessions", ["user_id", "status"])
+    op.create_index("ix_interview_sessions_resume_id", "interview_sessions", ["resume_id"])
 
     op.create_table(
         "questions",

@@ -24,7 +24,7 @@ class InterviewSession(Base, UUIDMixin, TimestampMixin):
         nullable=False, index=True,
     )
     resume_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("resumes.id", ondelete="SET NULL"), nullable=True,
+        UUID(as_uuid=True), ForeignKey("resumes.id", ondelete="SET NULL"), nullable=True, index=True,
     )
     interview_type: Mapped[InterviewType] = mapped_column(String(20), nullable=False)
     difficulty: Mapped[Difficulty] = mapped_column(String(10), nullable=False)
