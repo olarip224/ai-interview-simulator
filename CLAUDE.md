@@ -78,9 +78,10 @@ app/
 
 ## Database
 
-Two migrations so far:
+Three migrations so far:
 - `0001_initial` — `users`, `refresh_tokens`
 - `0002_add_resumes` — `resumes` (user_id FK → users CASCADE, JSONB parsed_data)
+- `0003_add_interviews` — `interview_sessions`, `questions`, `answers`, `feedback`, `analytics`
 
 `_AsyncSessionLocal` is exported from `app.database.session` — background tasks that need their own session import this and create `async with _AsyncSessionLocal() as session:`.
 
@@ -96,7 +97,7 @@ Two migrations so far:
 
 `AIClient` ABC in `app/ai/client.py` — services never import `anthropic` directly. `ClaudeClient` does lazy `from anthropic import AsyncAnthropic` inside `__init__`. `get_ai_client()` dep uses `@lru_cache`.
 
-Resume analysis prompt in `app/ai/prompts/resume.py`. Parser in `app/ai/parsers.py` — extracts JSON with regex fallback to empty `ParsedResumeData`.
+Resume analysis prompt in `app/ai/prompts/resume.py`. Interview question/feedback prompts in `app/ai/prompts/interview.py` and `app/ai/prompts/feedback.py`. Parser in `app/ai/parsers.py` — extracts JSON with regex fallback; produces `ParsedResumeData`, `QuestionOutput`, `FeedbackOutput`.
 
 ## File Uploads
 
@@ -120,15 +121,15 @@ Unit tests (`tests/unit/`) use `AsyncMock`/`MagicMock` — no real DB or files. 
 
 ## Active Development Branch
 
-`feat/milestone-2-resume-system` — Milestone 2 (Resume System) in progress. See `docs/superpowers/plans/` for implementation plans.
+`feat/milestone-3-interview-engine` — Milestone 3 (Interview Engine) in progress. See `docs/superpowers/plans/` for implementation plans.
 
 ## Milestones
 
 | Milestone | Status | Branch |
 |---|---|---|
 | 1: Auth + scaffold | Complete | merged to master |
-| 2: Resume system | In progress | feat/milestone-2-resume-system |
-| 3: Interview engine | Planned | — |
+| 2: Resume system | Complete | merged to master |
+| 3: Interview engine | In progress | feat/milestone-3-interview-engine |
 | 4: Analytics | Planned | — |
 | 5: Coding challenges | Planned | — |
 | 6: Production hardening | Planned | — |
