@@ -70,7 +70,7 @@ async def client(engine):
     # Set up AI client mock
     mock_ai = MagicMock()
     mock_ai.complete = AsyncMock(
-        return_value='{"skills":["Python"],"experience":[],"education":[],"summary":"Test."}'
+        return_value='{"question_text":"Tell me about yourself","question_type":"behavioral","difficulty_level":3,"skills":["Python"],"experience":[],"education":[],"summary":"Test.","overall_score":8.0,"feedback_text":"Good answer","strengths":["Clear"],"weaknesses":["Detail"],"suggestions":["Elaborate"]}'
     )
 
     app.dependency_overrides[get_db] = override_get_db
