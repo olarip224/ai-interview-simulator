@@ -86,6 +86,8 @@ class InterviewService:
         self, session_id: uuid.UUID, user_id: uuid.UUID
     ) -> Question:
         s = await self.get_session(session_id, user_id)
+        if s.status != SessionStatus.ACTIVE:
+            raise ConflictError("Session is not active")
         prior = await self.question_repo.list_for_session(session_id)
         next_seq = await self.question_repo.get_next_sequence(session_id)
 
@@ -131,6 +133,8 @@ class InterviewService:
         time_taken_seconds: int | None,
     ) -> tuple[Answer, Feedback]:
         s = await self.get_session(session_id, user_id)
+        if s.status != SessionStatus.ACTIVE:
+            raise ConflictError("Session is not active")
         question = await self.question_repo.get_or_404(question_id)
         if question.session_id != session_id:
             raise ForbiddenError()
@@ -171,7 +175,7 @@ class InterviewService:
 
     async def complete_session(
         self, session_id: uuid.UUID, user_id: uuid.UUID
-    ) -> InterviewSession:
+    ) -> tuple[InterviewSession, int]:
         s = await self.get_session(session_id, user_id)
         if s.status != SessionStatus.ACTIVE:
             raise ConflictError("Session already completed")
@@ -219,7 +223,8 @@ class InterviewService:
             overall_score=s.overall_score,
             weak_topics=weak_topics,
         )
-        return s
+        questions_answered = len(feedbacks)
+        return s, questions_answered
 
     async def get_session_feedback(
         self, session_id: uuid.UUID, user_id: uuid.UUID

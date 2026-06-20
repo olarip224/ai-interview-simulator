@@ -99,12 +99,11 @@ async def complete_session(
     ai_client: Annotated[AIClient, Depends(get_ai_client)],
 ) -> CompleteSessionResponse:
     svc = InterviewService(session, ai_client)
-    s = await svc.complete_session(session_id, current_user.id)
-    questions = await svc.question_repo.list_for_session(session_id)
+    s, questions_answered = await svc.complete_session(session_id, current_user.id)
     return CompleteSessionResponse(
         session_id=s.id,
         overall_score=s.overall_score or 0.0,
-        questions_answered=len(questions),
+        questions_answered=questions_answered,
     )
 
 

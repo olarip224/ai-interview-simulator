@@ -148,8 +148,9 @@ async def test_complete_session_sets_score_and_status():
     )
     svc.analytics_repo.create = AsyncMock()
 
-    result = await svc.complete_session(_SESSION_ID, _USER_ID)
+    result, questions_answered = await svc.complete_session(_SESSION_ID, _USER_ID)
     assert mock_session.status == SessionStatus.COMPLETED
     assert mock_session.overall_score == pytest.approx(7.0)
     svc.analytics_repo.create.assert_awaited_once()
     assert result is mock_session
+    assert questions_answered == 2
