@@ -81,3 +81,20 @@ class AnalyticsRepository(BaseRepository[Analytics]):
             select(Analytics).where(Analytics.session_id == session_id)
         )
         return result.scalar_one_or_none()
+
+    async def list_for_user(self, user_id: uuid.UUID) -> list[Analytics]:
+        result = await self.session.execute(
+            select(Analytics)
+            .where(Analytics.user_id == user_id)
+            .order_by(Analytics.created_at.desc())
+        )
+        return list(result.scalars().all())
+
+    async def list_for_user_with_session(self, user_id: uuid.UUID) -> list[Analytics]:
+        result = await self.session.execute(
+            select(Analytics)
+            .where(Analytics.user_id == user_id)
+            .options(selectinload(Analytics.session))
+            .order_by(Analytics.created_at.desc())
+        )
+        return list(result.scalars().all())
