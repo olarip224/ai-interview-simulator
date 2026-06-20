@@ -227,3 +227,19 @@ class InterviewService:
         s = await self.get_session(session_id, user_id)
         questions = await self.question_repo.list_for_session(session_id)
         return s, questions
+
+    async def get_session_feedback_detail(
+        self,
+        session_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> tuple[InterviewSession, list[Question], dict, dict]:
+        s = await self.get_session(session_id, user_id)
+        questions = await self.question_repo.list_for_session(session_id)
+        feedbacks = await self.feedback_repo.list_for_session(session_id)
+        feedback_by_answer: dict = {f.answer_id: f for f in feedbacks}
+        answers: dict = {}
+        for q in questions:
+            answer = await self.answer_repo.get_by_question(q.id)
+            if answer is not None:
+                answers[q.id] = answer
+        return s, questions, answers, feedback_by_answer

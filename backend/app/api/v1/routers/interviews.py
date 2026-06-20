@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends
 from app.ai.client import AIClient
 from app.ai.dependencies import get_ai_client
 from app.dependencies import DB, CurrentUser
-from app.repositories.interview_repository import AnswerRepository, FeedbackRepository
 from app.schemas.interview import (
     AnswerFeedbackResponse,
     CompleteSessionResponse,
@@ -117,19 +116,16 @@ async def get_session_feedback(
     ai_client: Annotated[AIClient, Depends(get_ai_client)],
 ) -> SessionFeedbackResponse:
     svc = InterviewService(session, ai_client)
-    s, questions = await svc.get_session_feedback(session_id, current_user.id)
-
-    answer_repo = AnswerRepository(session)
-    feedback_repo = FeedbackRepository(session)
-    all_feedbacks = await feedback_repo.list_for_session(session_id)
-    feedback_by_answer = {f.answer_id: f for f in all_feedbacks}
+    s, questions, answers, feedback_by_answer = await svc.get_session_feedback_detail(
+        session_id, current_user.id
+    )
 
     items: list[QuestionFeedbackItem] = []
     all_strengths: list[str] = []
     all_weaknesses: list[str] = []
 
     for q in questions:
-        answer = await answer_repo.get_by_question(q.id)
+        answer = answers.get(q.id)
         fb = None
         if answer is not None:
             fb_obj = feedback_by_answer.get(answer.id)
