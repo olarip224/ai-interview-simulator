@@ -78,7 +78,7 @@ app/
 
 ## Database
 
-Three migrations so far:
+Three migrations (no new migration for M4 — analytics table already existed):
 - `0001_initial` — `users`, `refresh_tokens`
 - `0002_add_resumes` — `resumes` (user_id FK → users CASCADE, JSONB parsed_data)
 - `0003_add_interviews` — `interview_sessions`, `questions`, `answers`, `feedback`, `analytics`
@@ -121,7 +121,7 @@ Unit tests (`tests/unit/`) use `AsyncMock`/`MagicMock` — no real DB or files. 
 
 ## Active Development Branch
 
-`feat/milestone-3-interview-engine` — Milestone 3 (Interview Engine) in progress. See `docs/superpowers/plans/` for implementation plans.
+`master` — Milestone 4 (Analytics) complete. Next: Milestone 5 (Coding Challenges).
 
 ## Milestones
 
@@ -129,7 +129,7 @@ Unit tests (`tests/unit/`) use `AsyncMock`/`MagicMock` — no real DB or files. 
 |---|---|---|
 | 1: Auth + scaffold | Complete | merged to master |
 | 2: Resume system | Complete | merged to master |
-| 3: Interview engine | In progress | feat/milestone-3-interview-engine |
-| 4: Analytics | Planned | — |
+| 3: Interview engine | Complete | merged to master |
+| 4: Analytics | Complete | merged to master |
 | 5: Coding challenges | Planned | — |
 | 6: Production hardening | Planned | — |
