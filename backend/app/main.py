@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.v1.routers import analytics as analytics_router
 from app.api.v1.routers import auth as auth_router
 from app.api.v1.routers import health as health_router
 from app.api.v1.routers import interviews as interviews_router
@@ -53,6 +54,10 @@ def create_app() -> FastAPI:
     app.include_router(
         interviews_router.router,
         prefix=f"{settings.API_PREFIX}/interviews",
+    )
+    app.include_router(
+        analytics_router.router,
+        prefix=f"{settings.API_PREFIX}/analytics",
     )
 
     return app
