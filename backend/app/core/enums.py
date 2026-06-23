@@ -25,3 +25,9 @@ class QuestionType(StrEnum):
     BEHAVIORAL = "behavioral"
     CODING = "coding"
     FOLLOW_UP = "follow_up"
+
+
+class ChallengeDifficulty(StrEnum):
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard"
