@@ -78,10 +78,11 @@ app/
 
 ## Database
 
-Three migrations (no new migration for M4 — analytics table already existed):
+Four migrations:
 - `0001_initial` — `users`, `refresh_tokens`
 - `0002_add_resumes` — `resumes` (user_id FK → users CASCADE, JSONB parsed_data)
 - `0003_add_interviews` — `interview_sessions`, `questions`, `answers`, `feedback`, `analytics`
+- `0004_add_coding_challenges` — `coding_challenges`, `coding_attempts`
 
 `_AsyncSessionLocal` is exported from `app.database.session` — background tasks that need their own session import this and create `async with _AsyncSessionLocal() as session:`.
 
@@ -97,7 +98,7 @@ Three migrations (no new migration for M4 — analytics table already existed):
 
 `AIClient` ABC in `app/ai/client.py` — services never import `anthropic` directly. `ClaudeClient` does lazy `from anthropic import AsyncAnthropic` inside `__init__`. `get_ai_client()` dep uses `@lru_cache`.
 
-Resume analysis prompt in `app/ai/prompts/resume.py`. Interview question/feedback prompts in `app/ai/prompts/interview.py` and `app/ai/prompts/feedback.py`. Parser in `app/ai/parsers.py` — extracts JSON with regex fallback; produces `ParsedResumeData`, `QuestionOutput`, `FeedbackOutput`.
+Resume analysis prompt in `app/ai/prompts/resume.py`. Interview question/feedback prompts in `app/ai/prompts/interview.py` and `app/ai/prompts/feedback.py`. Code evaluation prompt in `app/ai/prompts/coding.py`. Parser in `app/ai/parsers.py` — extracts JSON with regex fallback; produces `ParsedResumeData`, `QuestionOutput`, `FeedbackOutput`, `CodeEvaluationOutput`.
 
 ## File Uploads
 
@@ -121,7 +122,7 @@ Unit tests (`tests/unit/`) use `AsyncMock`/`MagicMock` — no real DB or files. 
 
 ## Active Development Branch
 
-`master` — Milestone 4 (Analytics) complete. Next: Milestone 5 (Coding Challenges).
+`master` — Milestone 5 (Coding Challenges) complete. Next: Milestone 6 (Production Hardening).
 
 ## Milestones
 
@@ -131,5 +132,24 @@ Unit tests (`tests/unit/`) use `AsyncMock`/`MagicMock` — no real DB or files. 
 | 2: Resume system | Complete | merged to master |
 | 3: Interview engine | Complete | merged to master |
 | 4: Analytics | Complete | merged to master |
-| 5: Coding challenges | Planned | — |
+| 5: Coding challenges | Complete | merged to master |
 | 6: Production hardening | Planned | — |
+
+## Milestone 5 — What Was Added
+
+**Coding Challenges** — standalone practice feature, independent of interview sessions.
+
+- **Models:** `CodingChallenge` (problem bank), `CodingAttempt` (user submissions) in `app/models/coding.py`
+- **Migration:** `0004_add_coding_challenges` — `coding_challenges` + `coding_attempts` tables
+- **AI:** `CODE_EVALUATION_PROMPT` in `app/ai/prompts/coding.py`; `CodeEvaluationOutput` + `parse_code_evaluation` in `app/ai/parsers.py`
+- **Schemas:** 7 Pydantic schemas in `app/schemas/coding.py`
+- **Repositories:** `CodingChallengeRepository`, `CodingAttemptRepository` in `app/repositories/coding_repository.py`
+- **Service:** `CodingChallengeService(session, ai_client)` in `app/services/coding_service.py`
+- **Endpoints** (all at `/api/v1/challenges`):
+  - `GET /` — list challenges (filter by `difficulty`, `tag`; no auth)
+  - `GET /{challenge_id}` — challenge detail with description, examples, starter code (no auth)
+  - `POST /{challenge_id}/attempts` — submit code, get AI feedback (auth required, returns 201)
+  - `GET /me/attempts` — list my attempts, optional `?challenge_id=` filter (auth required)
+  - `GET /me/attempts/{attempt_id}` — attempt detail with code and all scores (auth required)
+- **Seed script:** `backend/seed_challenges.py` — seeds 5 starter problems (Two Sum, Valid Parentheses, Maximum Subarray, Binary Search, Climbing Stairs); idempotent
+- **Tests:** 13 unit tests + 9 integration tests; also fixed pre-existing pytest-asyncio 0.24 event loop issue in conftest
