@@ -1,10 +1,9 @@
-import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.pool import NullPool
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.ai.dependencies import get_ai_client, get_file_storage
@@ -18,17 +17,9 @@ _db_name = settings.DATABASE_URL.rstrip("/").rsplit("/", 1)[-1]
 TEST_DATABASE_URL = settings.DATABASE_URL.rsplit("/", 1)[0] + f"/{_db_name}_test"
 
 
-@pytest.fixture(scope="session")
-def event_loop():
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
-    yield loop
-    loop.close()
-
-
 @pytest_asyncio.fixture(scope="session")
 async def engine():
-    e = create_async_engine(TEST_DATABASE_URL, echo=False)
+    e = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=NullPool)
     async with e.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield e
