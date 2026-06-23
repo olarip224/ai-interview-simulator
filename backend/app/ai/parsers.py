@@ -70,3 +70,35 @@ def parse_feedback_output(raw: str) -> FeedbackOutput:
         return FeedbackOutput.model_validate(data)
     except (json.JSONDecodeError, ValidationError):
         return FeedbackOutput()
+
+
+class CodeEvaluationOutput(BaseModel):
+    correctness_score: float | None = None
+    efficiency_score: float | None = None
+    style_score: float | None = None
+    overall_score: float = 5.0
+    is_correct: bool = False
+    feedback_text: str = ""
+    strengths: list[str] = []
+    weaknesses: list[str] = []
+    suggestions: list[str] = []
+
+    def model_post_init(self, __context: object) -> None:
+        def _clamp(v: float | None) -> float | None:
+            return None if v is None else max(0.0, min(10.0, v))
+
+        self.correctness_score = _clamp(self.correctness_score)
+        self.efficiency_score = _clamp(self.efficiency_score)
+        self.style_score = _clamp(self.style_score)
+        self.overall_score = max(0.0, min(10.0, self.overall_score))
+
+
+def parse_code_evaluation(raw: str) -> CodeEvaluationOutput:
+    match = re.search(r"\{.*\}", raw, re.DOTALL)
+    if not match:
+        return CodeEvaluationOutput()
+    try:
+        data = json.loads(match.group())
+        return CodeEvaluationOutput.model_validate(data)
+    except (json.JSONDecodeError, ValidationError):
+        return CodeEvaluationOutput()
