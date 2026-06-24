@@ -67,11 +67,12 @@ async def test_login_raises_for_unknown_email():
 async def test_login_raises_for_wrong_password():
     svc = make_service()
     svc.user_repo = AsyncMock()
-    mock_user = make_mock_user(password_hash="$2b$12$notthehashofwrongpassword")
+    mock_user = make_mock_user()
     svc.user_repo.get_by_email = AsyncMock(return_value=mock_user)
 
-    with pytest.raises(AuthenticationError, match="Invalid email or password"):
-        await svc.login("test@example.com", "wrongpassword")
+    with patch("app.services.auth_service.verify_password", return_value=False):
+        with pytest.raises(AuthenticationError, match="Invalid email or password"):
+            await svc.login("test@example.com", "wrongpassword")
 
 
 @pytest.mark.asyncio

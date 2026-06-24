@@ -9,6 +9,11 @@ class RegisterRequest(BaseModel):
     username: str
     password: str
 
+    @field_validator("email", mode="after")
+    @classmethod
+    def email_lowercase(cls, v: str) -> str:
+        return v.lower()
+
     @field_validator("username")
     @classmethod
     def username_valid(cls, v: str) -> str:

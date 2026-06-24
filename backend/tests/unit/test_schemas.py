@@ -26,7 +26,7 @@ def test_register_rejects_username_with_special_chars():
 
 def test_register_accepts_valid_data():
     req = RegisterRequest(email="User@Example.com", username="valid_user", password="password123")
-    assert req.email == "user@example.com"  # pydantic EmailStr lowercases
+    assert req.email == "user@example.com"
     assert req.username == "valid_user"
 
 
