@@ -122,7 +122,7 @@ Unit tests (`tests/unit/`) use `AsyncMock`/`MagicMock` — no real DB or files. 
 
 ## Active Development Branch
 
-`master` — Milestone 5 (Coding Challenges) complete. Next: Milestone 6 (Production Hardening).
+`master` — Milestone 6 (Production Hardening) complete. Next: Milestone 7 (TBD).
 
 ## Milestones
 
@@ -133,7 +133,21 @@ Unit tests (`tests/unit/`) use `AsyncMock`/`MagicMock` — no real DB or files. 
 | 3: Interview engine | Complete | merged to master |
 | 4: Analytics | Complete | merged to master |
 | 5: Coding challenges | Complete | merged to master |
-| 6: Production hardening | Planned | — |
+| 6: Production hardening | Complete | merged to master |
+
+## Milestone 6 — What Was Added
+
+**Production Hardening** — API hardened for production deployment.
+
+- **Rate Limiting:** `slowapi==0.1.9` backed by Redis. `app/core/rate_limit.py` exports a `limiter` singleton. Seven routes decorated: register(5/min), login(10/min), refresh(30/min), upload(5/min), submit_attempt(10/min), generate_question(20/min), submit_answer(20/min). `RateLimitExceeded` → 429 `{"detail": "Rate limit exceeded"}`. Tests disable limiting via `_disable_rate_limiting` autouse fixture in `conftest.py`.
+- **Error Handling:** Global `_unhandled_exception_handler` → 500 `{"detail": "Internal server error", "request_id": "..."}`. `LoggingMiddleware` now stores `request_id` in `request.state` for access by handlers.
+- **Health Check:** `/api/v1/health` now checks Redis (`await redis.ping()`) in addition to DB, returning `{"status":"ok","db":"ok","redis":"ok"}`. Uses `Depends(get_redis)` pattern.
+- **Security Headers:** `SecurityHeadersMiddleware` adds X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy on every response.
+- **Startup Validation:** `_validate_settings()` called in lifespan — `sys.exit(1)` if `SECRET_KEY` is a known placeholder or `ANTHROPIC_API_KEY` starts with `sk-ant-your`. Bypassed in tests via `SKIP_STARTUP_VALIDATION=1` env var (set in `conftest.py`).
+- **DB Pool:** `pool_recycle=3600` added to SQLAlchemy engine.
+- **Pagination:** `app/schemas/pagination.py` — `PageParams` (limit/offset query deps), `Pagination` type alias, `PageResponse[T]` generic Pydantic model. Four list endpoints updated: `GET /challenges`, `GET /challenges/me/attempts`, `GET /interviews/sessions`, `GET /resumes`. Repo `list_*` methods return `tuple[list[T], int]`.
+- **Docker:** `backend/docker/Dockerfile` — non-root `appuser` (UID 1001), HEALTHCHECK via curl. `backend/docker/docker-compose.prod.yml` — 4 workers, no `--reload`, `restart: unless-stopped`, `mem_limit` on all services.
+- **Note:** `from __future__ import annotations` must NOT be in router files — it breaks FastAPI path-param resolution when combined with `@limiter.limit()` decorators.
 
 ## Milestone 5 — What Was Added
 
