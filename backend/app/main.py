@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.api.v1.routers import analytics as analytics_router
 from app.api.v1.routers import auth as auth_router
@@ -12,6 +13,7 @@ from app.api.v1.routers import health as health_router
 from app.api.v1.routers import interviews as interviews_router
 from app.api.v1.routers import resumes as resumes_router
 from app.config import settings
+from app.core.rate_limit import limiter
 from app.database.redis import close_redis
 from app.middleware.error_handler import register_exception_handlers
 from app.middleware.logging import LoggingMiddleware
@@ -35,6 +37,8 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    app.state.limiter = limiter
+    app.add_middleware(SlowAPIMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
@@ -47,23 +51,11 @@ def create_app() -> FastAPI:
     register_exception_handlers(app)
 
     app.include_router(health_router.router, prefix=settings.API_PREFIX)
-    app.include_router(
-        auth_router.router,
-        prefix=f"{settings.API_PREFIX}/auth",
-    )
+    app.include_router(auth_router.router, prefix=f"{settings.API_PREFIX}/auth")
     app.include_router(resumes_router.router, prefix=f"{settings.API_PREFIX}/resumes")
-    app.include_router(
-        interviews_router.router,
-        prefix=f"{settings.API_PREFIX}/interviews",
-    )
-    app.include_router(
-        analytics_router.router,
-        prefix=f"{settings.API_PREFIX}/analytics",
-    )
-    app.include_router(
-        challenges_router.router,
-        prefix=f"{settings.API_PREFIX}/challenges",
-    )
+    app.include_router(interviews_router.router, prefix=f"{settings.API_PREFIX}/interviews")
+    app.include_router(analytics_router.router, prefix=f"{settings.API_PREFIX}/analytics")
+    app.include_router(challenges_router.router, prefix=f"{settings.API_PREFIX}/challenges")
 
     return app
 

@@ -1,12 +1,11 @@
-from __future__ import annotations
-
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.ai.client import AIClient
 from app.ai.dependencies import get_ai_client
+from app.core.rate_limit import limiter
 from app.dependencies import DB, CurrentUser
 from app.schemas.interview import (
     AnswerFeedbackResponse,
@@ -60,7 +59,9 @@ async def get_session(
 
 
 @router.post("/sessions/{session_id}/questions", response_model=QuestionResponse, status_code=201)
+@limiter.limit("20/minute")
 async def generate_question(
+    request: Request,
     session_id: uuid.UUID,
     current_user: CurrentUser,
     session: DB,
@@ -74,7 +75,9 @@ async def generate_question(
     "/sessions/{session_id}/questions/{question_id}/answers",
     response_model=AnswerFeedbackResponse,
 )
+@limiter.limit("20/minute")
 async def submit_answer(
+    request: Request,
     session_id: uuid.UUID,
     question_id: uuid.UUID,
     data: SubmitAnswerRequest,

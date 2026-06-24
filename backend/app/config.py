@@ -27,5 +27,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "./uploads"
     MAX_UPLOAD_SIZE_MB: int = 10
 
+    RATE_LIMIT_ENABLED: bool = True
+
 
 settings = Settings()

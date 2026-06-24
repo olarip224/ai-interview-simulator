@@ -1,6 +1,7 @@
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.pool import NullPool
@@ -8,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.ai.dependencies import get_ai_client, get_file_storage
 from app.config import settings
+from app.core.rate_limit import limiter as _rate_limiter
 from app.database.session import get_db
 from app.main import create_app
 from app.models.base import Base
@@ -15,6 +17,13 @@ from app.models.base import Base
 # Derive test DB URL by appending _test to the DB name
 _db_name = settings.DATABASE_URL.rstrip("/").rsplit("/", 1)[-1]
 TEST_DATABASE_URL = settings.DATABASE_URL.rsplit("/", 1)[0] + f"/{_db_name}_test"
+
+
+@pytest.fixture(autouse=True)
+def _disable_rate_limiting():
+    _rate_limiter.enabled = False
+    yield
+    _rate_limiter.enabled = True
 
 
 @pytest_asyncio.fixture(scope="session")

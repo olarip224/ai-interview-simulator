@@ -1,12 +1,11 @@
-from __future__ import annotations
-
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.ai.client import AIClient
 from app.ai.dependencies import get_ai_client
+from app.core.rate_limit import limiter
 from app.dependencies import DB, CurrentUser
 from app.schemas.coding import (
     AttemptFeedbackResponse,
@@ -69,7 +68,9 @@ async def get_challenge(
 
 
 @router.post("/{challenge_id}/attempts", status_code=201, response_model=SubmitAttemptResponse)
+@limiter.limit("10/minute")
 async def submit_attempt(
+    request: Request,
     challenge_id: UUID,
     body: SubmitCodeRequest,
     current_user: CurrentUser,

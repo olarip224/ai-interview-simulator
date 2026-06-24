@@ -1,13 +1,12 @@
-from __future__ import annotations
-
 import logging
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, UploadFile
 
 from app.ai.client import AIClient
 from app.ai.dependencies import get_ai_client, get_file_storage
+from app.core.rate_limit import limiter
 from app.database.session import _AsyncSessionLocal
 from app.dependencies import DB, CurrentUser
 from app.repositories.resume_repository import ResumeRepository
@@ -38,7 +37,9 @@ async def _run_analysis(
 
 
 @router.post("", response_model=ResumeResponse, status_code=202)
+@limiter.limit("5/minute")
 async def upload_resume(
+    request: Request,
     file: UploadFile,
     background_tasks: BackgroundTasks,
     current_user: CurrentUser,
