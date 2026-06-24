@@ -16,22 +16,28 @@ from app.schemas.coding import (
     SubmitAttemptResponse,
     SubmitCodeRequest,
 )
+from app.schemas.pagination import PageResponse, Pagination
 from app.services.coding_service import CodingChallengeService
 
 router = APIRouter(tags=["challenges"])
 
 
 # /me/... routes defined FIRST to prevent conflict with /{challenge_id} UUID parameter
-@router.get("/me/attempts", response_model=list[CodingAttemptResponse])
+@router.get("/me/attempts", response_model=PageResponse[CodingAttemptResponse])
 async def list_my_attempts(
     current_user: CurrentUser,
     session: DB,
     ai_client: Annotated[AIClient, Depends(get_ai_client)],
+    pagination: Pagination,
     challenge_id: UUID | None = Query(None),
-) -> list[CodingAttemptResponse]:
-    return await CodingChallengeService(session, ai_client).list_user_attempts(
-        current_user.id, challenge_id=challenge_id
+) -> PageResponse[CodingAttemptResponse]:
+    items, total = await CodingChallengeService(session, ai_client).list_user_attempts(
+        current_user.id,
+        challenge_id=challenge_id,
+        limit=pagination.limit,
+        offset=pagination.offset,
     )
+    return PageResponse(items=items, total=total, limit=pagination.limit, offset=pagination.offset)
 
 
 @router.get("/me/attempts/{attempt_id}", response_model=CodingAttemptDetailResponse)
@@ -46,16 +52,21 @@ async def get_my_attempt(
     )
 
 
-@router.get("", response_model=list[CodingChallengeResponse])
+@router.get("", response_model=PageResponse[CodingChallengeResponse])
 async def list_challenges(
     session: DB,
     ai_client: Annotated[AIClient, Depends(get_ai_client)],
+    pagination: Pagination,
     difficulty: str | None = Query(None),
     tag: str | None = Query(None),
-) -> list[CodingChallengeResponse]:
-    return await CodingChallengeService(session, ai_client).list_challenges(
-        difficulty=difficulty, tag=tag
+) -> PageResponse[CodingChallengeResponse]:
+    items, total = await CodingChallengeService(session, ai_client).list_challenges(
+        difficulty=difficulty,
+        tag=tag,
+        limit=pagination.limit,
+        offset=pagination.offset,
     )
+    return PageResponse(items=items, total=total, limit=pagination.limit, offset=pagination.offset)
 
 
 @router.get("/{challenge_id}", response_model=CodingChallengeDetailResponse)

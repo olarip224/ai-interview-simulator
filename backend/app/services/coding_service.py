@@ -22,9 +22,16 @@ class CodingChallengeService:
         self._ai = ai_client
 
     async def list_challenges(
-        self, *, difficulty: str | None = None, tag: str | None = None
-    ) -> list[CodingChallenge]:
-        return await self._challenges.list_active(difficulty=difficulty, tag=tag)
+        self,
+        *,
+        difficulty: str | None = None,
+        tag: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[CodingChallenge], int]:
+        return await self._challenges.list_active(
+            difficulty=difficulty, tag=tag, limit=limit, offset=offset
+        )
 
     async def get_challenge(self, challenge_id: uuid.UUID) -> CodingChallenge:
         challenge = await self._challenges.get(challenge_id)
@@ -88,9 +95,16 @@ class CodingChallengeService:
         )
 
     async def list_user_attempts(
-        self, user_id: uuid.UUID, *, challenge_id: uuid.UUID | None = None
-    ) -> list[CodingAttempt]:
-        return await self._attempts.list_for_user(user_id, challenge_id=challenge_id)
+        self,
+        user_id: uuid.UUID,
+        *,
+        challenge_id: uuid.UUID | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[CodingAttempt], int]:
+        return await self._attempts.list_for_user(
+            user_id, challenge_id=challenge_id, limit=limit, offset=offset
+        )
 
     async def get_attempt(
         self, attempt_id: uuid.UUID, user_id: uuid.UUID

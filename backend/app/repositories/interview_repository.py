@@ -13,17 +13,24 @@ class SessionRepository(BaseRepository[InterviewSession]):
     model = InterviewSession
 
     async def list_for_user(
-        self, user_id: uuid.UUID, *, status: str | None = None
-    ) -> list[InterviewSession]:
-        stmt = (
-            select(InterviewSession)
-            .where(InterviewSession.user_id == user_id)
-            .order_by(InterviewSession.started_at.desc())
-        )
+        self,
+        user_id: uuid.UUID,
+        *,
+        status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[InterviewSession], int]:
+        base_stmt = select(InterviewSession).where(InterviewSession.user_id == user_id)
         if status is not None:
-            stmt = stmt.where(InterviewSession.status == status)
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+            base_stmt = base_stmt.where(InterviewSession.status == status)
+
+        total: int = (await self.session.execute(
+            select(func.count()).select_from(base_stmt.subquery())
+        )).scalar_one()
+
+        paginated = base_stmt.order_by(InterviewSession.started_at.desc()).limit(limit).offset(offset)
+        result = await self.session.execute(paginated)
+        return list(result.scalars().all()), total
 
     async def get_with_questions(self, session_id: uuid.UUID) -> InterviewSession | None:
         result = await self.session.execute(

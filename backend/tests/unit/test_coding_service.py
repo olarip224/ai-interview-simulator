@@ -13,7 +13,7 @@ from app.services.coding_service import CodingChallengeService
 async def test_list_challenges_delegates_to_repo():
     mock_challenges = [MagicMock(), MagicMock()]
     mock_cr = MagicMock()
-    mock_cr.list_active = AsyncMock(return_value=mock_challenges)
+    mock_cr.list_active = AsyncMock(return_value=(mock_challenges, 2))
     mock_ar = MagicMock()
 
     with patch("app.services.coding_service.CodingChallengeRepository", return_value=mock_cr), \
@@ -21,8 +21,10 @@ async def test_list_challenges_delegates_to_repo():
         svc = CodingChallengeService(MagicMock(), MagicMock())
         result = await svc.list_challenges(difficulty="easy", tag="arrays")
 
-    assert result == mock_challenges
-    mock_cr.list_active.assert_awaited_once_with(difficulty="easy", tag="arrays")
+    assert result == (mock_challenges, 2)
+    mock_cr.list_active.assert_awaited_once_with(
+        difficulty="easy", tag="arrays", limit=50, offset=0
+    )
 
 
 @pytest.mark.asyncio
@@ -103,15 +105,17 @@ async def test_list_user_attempts_filters_by_challenge():
     user_id = uuid4()
     mock_cr = MagicMock()
     mock_ar = MagicMock()
-    mock_ar.list_for_user = AsyncMock(return_value=mock_attempts)
+    mock_ar.list_for_user = AsyncMock(return_value=(mock_attempts, 1))
 
     with patch("app.services.coding_service.CodingChallengeRepository", return_value=mock_cr), \
          patch("app.services.coding_service.CodingAttemptRepository", return_value=mock_ar):
         svc = CodingChallengeService(MagicMock(), MagicMock())
         result = await svc.list_user_attempts(user_id, challenge_id=challenge_id)
 
-    assert result == mock_attempts
-    mock_ar.list_for_user.assert_awaited_once_with(user_id, challenge_id=challenge_id)
+    assert result == (mock_attempts, 1)
+    mock_ar.list_for_user.assert_awaited_once_with(
+        user_id, challenge_id=challenge_id, limit=50, offset=0
+    )
 
 
 @pytest.mark.asyncio

@@ -66,8 +66,14 @@ class ResumeService:
             parsed_data=parsed.model_dump(),
         )
 
-    async def list_for_user(self, user_id: uuid.UUID) -> list[Resume]:
-        return await self.repo.list_active_for_user(user_id)
+    async def list_for_user(
+        self,
+        user_id: uuid.UUID,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[Resume], int]:
+        return await self.repo.list_active_for_user(user_id, limit=limit, offset=offset)
 
     async def get_by_id(self, resume_id: uuid.UUID, user_id: uuid.UUID) -> Resume:
         resume = await self.repo.get_or_404(resume_id)

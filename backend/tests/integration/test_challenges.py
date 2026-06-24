@@ -45,17 +45,22 @@ async def test_list_challenges_returns_seeded(client: AsyncClient, seeded_challe
     resp = await client.get("/api/v1/challenges")
     assert resp.status_code == 200
     data = resp.json()
-    assert len(data) == 1
-    assert data[0]["title"] == "Two Sum"
-    assert data[0]["difficulty"] == "easy"
-    assert "description" not in data[0]
+    assert data["total"] == 1
+    assert data["limit"] == 50
+    assert data["offset"] == 0
+    assert len(data["items"]) == 1
+    assert data["items"][0]["title"] == "Two Sum"
+    assert data["items"][0]["difficulty"] == "easy"
+    assert "description" not in data["items"][0]
 
 
 @pytest.mark.asyncio
 async def test_list_challenges_filters_by_difficulty(client: AsyncClient, seeded_challenge):
     resp = await client.get("/api/v1/challenges?difficulty=medium")
     assert resp.status_code == 200
-    assert resp.json() == []
+    data = resp.json()
+    assert data["total"] == 0
+    assert data["items"] == []
 
 
 @pytest.mark.asyncio
@@ -120,8 +125,9 @@ async def test_list_my_attempts_returns_submitted(
     resp = await client.get("/api/v1/challenges/me/attempts", headers=auth_headers)
     assert resp.status_code == 200
     data = resp.json()
-    assert len(data) == 1
-    assert data[0]["challenge_id"] == str(seeded_challenge.id)
+    assert data["total"] == 1
+    assert len(data["items"]) == 1
+    assert data["items"][0]["challenge_id"] == str(seeded_challenge.id)
 
 
 @pytest.mark.asyncio
@@ -139,7 +145,9 @@ async def test_list_my_attempts_filters_by_challenge(
         headers=auth_headers,
     )
     assert resp.status_code == 200
-    assert resp.json() == []
+    data = resp.json()
+    assert data["total"] == 0
+    assert data["items"] == []
 
 
 @pytest.mark.asyncio

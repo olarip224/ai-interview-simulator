@@ -10,6 +10,7 @@ from app.core.rate_limit import limiter
 from app.database.session import _AsyncSessionLocal
 from app.dependencies import DB, CurrentUser
 from app.repositories.resume_repository import ResumeRepository
+from app.schemas.pagination import PageResponse, Pagination
 from app.schemas.resume import ResumeDetailResponse, ResumeResponse
 from app.services.resume_service import ResumeService
 from app.utils.file_handler import FileStorage
@@ -53,13 +54,21 @@ async def upload_resume(
     return ResumeResponse.model_validate(resume)
 
 
-@router.get("", response_model=list[ResumeResponse])
+@router.get("", response_model=PageResponse[ResumeResponse])
 async def list_resumes(
     current_user: CurrentUser,
     session: DB,
-) -> list[ResumeResponse]:
-    resumes = await ResumeService(session, None, None).list_for_user(current_user.id)
-    return [ResumeResponse.model_validate(r) for r in resumes]
+    pagination: Pagination,
+) -> PageResponse[ResumeResponse]:
+    resumes, total = await ResumeService(session, None, None).list_for_user(
+        current_user.id, limit=pagination.limit, offset=pagination.offset
+    )
+    return PageResponse(
+        items=[ResumeResponse.model_validate(r) for r in resumes],
+        total=total,
+        limit=pagination.limit,
+        offset=pagination.offset,
+    )
 
 
 

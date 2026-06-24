@@ -60,9 +60,15 @@ class InterviewService:
         )
 
     async def list_sessions(
-        self, user_id: uuid.UUID, status: str | None = None
-    ) -> list[InterviewSession]:
-        return await self.session_repo.list_for_user(user_id, status=status)
+        self,
+        user_id: uuid.UUID,
+        status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[InterviewSession], int]:
+        return await self.session_repo.list_for_user(
+            user_id, status=status, limit=limit, offset=offset
+        )
 
     async def get_session(
         self, session_id: uuid.UUID, user_id: uuid.UUID

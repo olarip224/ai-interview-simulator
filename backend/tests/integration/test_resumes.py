@@ -78,7 +78,11 @@ async def test_list_resumes_returns_uploaded(client):
 
     resp = await client.get("/api/v1/resumes", headers=_auth(token))
     assert resp.status_code == 200
-    assert len(resp.json()) == 1
+    data = resp.json()
+    assert data["total"] == 1
+    assert data["limit"] == 50
+    assert data["offset"] == 0
+    assert len(data["items"]) == 1
 
 
 @pytest.mark.asyncio
@@ -128,7 +132,7 @@ async def test_delete_resume_returns_204(client):
 
     # Deleted resume no longer in list
     list_resp = await client.get("/api/v1/resumes", headers=_auth(token))
-    ids = [r["id"] for r in list_resp.json()]
+    ids = [r["id"] for r in list_resp.json()["items"]]
     assert resume_id not in ids
 
 

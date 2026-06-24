@@ -37,7 +37,11 @@ async def test_list_sessions_returns_created(client):
     await client.post("/api/v1/interviews/sessions", json={"interview_type": "behavioral", "difficulty": "junior"}, headers=_auth(token))
     resp = await client.get("/api/v1/interviews/sessions", headers=_auth(token))
     assert resp.status_code == 200
-    assert len(resp.json()) == 1
+    data = resp.json()
+    assert data["total"] == 1
+    assert data["limit"] == 50
+    assert data["offset"] == 0
+    assert len(data["items"]) == 1
 
 
 @pytest.mark.asyncio

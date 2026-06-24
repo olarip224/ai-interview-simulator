@@ -19,6 +19,7 @@ from app.schemas.interview import (
     SessionResponse,
     SubmitAnswerRequest,
 )
+from app.schemas.pagination import PageResponse, Pagination
 from app.services.interview_service import InterviewService
 
 router = APIRouter(tags=["interviews"])
@@ -36,15 +37,26 @@ async def create_session(
     return SessionResponse.model_validate(s)
 
 
-@router.get("/sessions", response_model=list[SessionResponse])
+@router.get("/sessions", response_model=PageResponse[SessionResponse])
 async def list_sessions(
     current_user: CurrentUser,
     session: DB,
     ai_client: Annotated[AIClient, Depends(get_ai_client)],
+    pagination: Pagination,
     status: str | None = None,
-) -> list[SessionResponse]:
-    sessions = await InterviewService(session, ai_client).list_sessions(current_user.id, status=status)
-    return [SessionResponse.model_validate(s) for s in sessions]
+) -> PageResponse[SessionResponse]:
+    sessions, total = await InterviewService(session, ai_client).list_sessions(
+        current_user.id,
+        status=status,
+        limit=pagination.limit,
+        offset=pagination.offset,
+    )
+    return PageResponse(
+        items=[SessionResponse.model_validate(s) for s in sessions],
+        total=total,
+        limit=pagination.limit,
+        offset=pagination.offset,
+    )
 
 
 @router.get("/sessions/{session_id}", response_model=SessionDetailResponse)

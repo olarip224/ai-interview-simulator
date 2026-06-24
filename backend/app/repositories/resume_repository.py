@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.models.resume import Resume
 from app.repositories.base import BaseRepository
@@ -11,13 +11,25 @@ from app.repositories.base import BaseRepository
 class ResumeRepository(BaseRepository[Resume]):
     model = Resume
 
-    async def list_active_for_user(self, user_id: uuid.UUID) -> list[Resume]:
-        result = await self.session.execute(
+    async def list_active_for_user(
+        self,
+        user_id: uuid.UUID,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[Resume], int]:
+        base_stmt = (
             select(Resume)
             .where(Resume.user_id == user_id, Resume.is_active.is_(True))
-            .order_by(Resume.created_at.desc())
         )
-        return list(result.scalars().all())
+
+        total: int = (await self.session.execute(
+            select(func.count()).select_from(base_stmt.subquery())
+        )).scalar_one()
+
+        paginated = base_stmt.order_by(Resume.created_at.desc()).limit(limit).offset(offset)
+        result = await self.session.execute(paginated)
+        return list(result.scalars().all()), total
 
     async def update_parsed(
         self,
