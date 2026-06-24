@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from app.ai.dependencies import get_ai_client, get_file_storage
 from app.config import settings
 from app.core.rate_limit import limiter as _rate_limiter
+from app.database.redis import get_redis
 from app.database.session import get_db
 from app.main import create_app
 from app.models.base import Base
@@ -73,7 +74,15 @@ async def client(engine):
         return_value='{"question_text":"Tell me about yourself","question_type":"behavioral","difficulty_level":3,"skills":["Python"],"experience":[],"education":[],"summary":"Test.","overall_score":8.0,"feedback_text":"Good answer","strengths":["Clear"],"weaknesses":["Detail"],"suggestions":["Elaborate"]}'
     )
 
+    # Set up Redis mock
+    mock_redis = AsyncMock()
+    mock_redis.ping = AsyncMock(return_value=True)
+
+    async def override_get_redis():
+        return mock_redis
+
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_redis] = override_get_redis
     app.dependency_overrides[get_file_storage] = lambda: mock_storage
     app.dependency_overrides[get_ai_client] = lambda: mock_ai
 
@@ -84,6 +93,7 @@ async def client(engine):
 
     app.dependency_overrides.pop(get_file_storage, None)
     app.dependency_overrides.pop(get_ai_client, None)
+    app.dependency_overrides.pop(get_redis, None)
 
     async with engine.begin() as conn:
         for table in reversed(Base.metadata.sorted_tables):

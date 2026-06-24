@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 class LoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: object) -> Response:
         request_id = str(uuid.uuid4())
+        request.state.request_id = request_id
         start = time.perf_counter()
 
         response: Response = await call_next(request)  # type: ignore[operator]

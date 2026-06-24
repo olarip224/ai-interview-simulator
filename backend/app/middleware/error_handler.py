@@ -15,6 +15,19 @@ async def _rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONR
     return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"})
 
 
+async def _unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    request_id = getattr(request.state, "request_id", "unknown")
+    logger.exception(
+        "Unhandled exception at %s",
+        request.url.path,
+        extra={"request_id": request_id},
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "request_id": request_id},
+    )
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
@@ -24,3 +37,4 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
 
     app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
+    app.add_exception_handler(Exception, _unhandled_exception_handler)
