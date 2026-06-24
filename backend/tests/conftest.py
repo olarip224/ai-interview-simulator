@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
@@ -6,6 +7,9 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.pool import NullPool
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+# Bypass startup validation when running tests — .env may contain placeholder values
+os.environ.setdefault("SKIP_STARTUP_VALIDATION", "1")
 
 from app.ai.dependencies import get_ai_client, get_file_storage
 from app.config import settings
