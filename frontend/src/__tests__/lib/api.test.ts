@@ -39,7 +39,7 @@ describe('request interceptor — Authorization header', () => {
 
     const config = {
       headers: { ...apiClient.defaults.headers },
-    } as InternalAxiosRequestConfig
+    } as unknown as InternalAxiosRequestConfig
 
     const result = await handler(config)
     expect(result.headers['Authorization']).toBe('Bearer my-access-token')
@@ -55,7 +55,7 @@ describe('request interceptor — Authorization header', () => {
 
     const config = {
       headers: { ...apiClient.defaults.headers },
-    } as InternalAxiosRequestConfig
+    } as unknown as InternalAxiosRequestConfig
 
     const result = await handler(config)
     expect(result.headers['Authorization']).toBeUndefined()
