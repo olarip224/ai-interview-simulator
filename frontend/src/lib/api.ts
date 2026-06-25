@@ -13,6 +13,11 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+// Shared promise deduplicates concurrent 401 refresh attempts so a single
+// revoked refresh token doesn't cause a spurious logout when two requests
+// both receive 401 simultaneously.
+let refreshPromise: Promise<void> | null = null
+
 // ─── Request interceptor: inject Bearer token ──────────────────────────────
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
@@ -44,8 +49,9 @@ apiClient.interceptors.response.use(
     }
 
     try {
-      await refreshTokens()
       originalConfig._retry = true
+      refreshPromise = refreshPromise ?? refreshTokens().finally(() => { refreshPromise = null })
+      await refreshPromise
       return apiClient.request(originalConfig)
     } catch (refreshError) {
       clearAuth()

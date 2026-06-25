@@ -42,7 +42,8 @@ function LoginForm() {
     setIsLoading(true)
     try {
       await login({ email: values.email, password: values.password })
-      const next = searchParams.get('next') ?? '/'
+      const rawNext = searchParams.get('next')
+      const next = rawNext?.startsWith('/') ? rawNext : '/'
       router.push(next)
       router.refresh()
     } catch (err: unknown) {
