@@ -122,9 +122,9 @@ Unit tests (`tests/unit/`) use `AsyncMock`/`MagicMock` — no real DB or files. 
 
 ## Active Development Branch
 
-`master` — Milestone 6 (Production Hardening) complete. Next: Milestone 7 (TBD).
+`master` — Backend complete (M6). Frontend work begins with F1 (Scaffold + Auth).
 
-## Milestones
+## Backend Milestones
 
 | Milestone | Status | Branch |
 |---|---|---|
@@ -134,6 +134,21 @@ Unit tests (`tests/unit/`) use `AsyncMock`/`MagicMock` — no real DB or files. 
 | 4: Analytics | Complete | merged to master |
 | 5: Coding challenges | Complete | merged to master |
 | 6: Production hardening | Complete | merged to master |
+
+## Frontend Milestones
+
+See full breakdown: [`docs/frontend-milestones.md`](docs/frontend-milestones.md)
+
+**Tech stack:** Next.js 15, TypeScript, Tailwind CSS, shadcn/ui, TanStack Query, Zustand, Monaco Editor, Vitest, Playwright — deployed to Vercel.
+
+| Milestone | Deliverable | Status |
+|---|---|---|
+| F1: Scaffold + Auth | Login/register, protected routing, auth token rotation | Planned |
+| F2: Resume System | Upload, async analysis polling, detail view | Planned |
+| F3: Interview Simulator | Session creation, interview room, feedback summary | Planned |
+| F4: Coding Challenges | Challenge browser, Monaco editor, AI evaluation | Planned |
+| F5: Analytics Dashboard | Progress charts, weak topics, summary stats | Planned |
+| F6: Polish + Deploy | Skeletons, error handling, responsive, live on Vercel | Planned |
 
 ## Milestone 6 — What Was Added
 
