@@ -7,7 +7,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **GitHub:** https://github.com/olarip224/ai-interview-simulator (private)
 **Git user:** olarip224 / abrahamgutu23@gmail.com
 
-When Claude Code runs directly inside WSL (Bash tool operating on the native Linux filesystem), `git`/`npm`/`pytest` all work normally from this directory. If instead invoked from Windows with only UNC-path access to WSL, use PowerShell:
+When Claude Code runs directly inside WSL (Bash tool operating on the native Linux filesystem), `git`/`npm`/`pytest` all work normally from this directory — including local commits. **`git push` needs GitHub credentials that only exist on the Windows side** (no credential helper/SSH key is set up inside this WSL environment) — push from PowerShell:
+```powershell
+Set-Location "\\wsl.localhost\Ubuntu\home\olari\ai-interview-simulator"
+git push
+```
+If invoked from Windows with only UNC-path access to WSL (no native Bash access), do the add/commit from PowerShell too:
 ```powershell
 Set-Location "\\wsl.localhost\Ubuntu\home\olari\ai-interview-simulator"
 git add backend/app/...
