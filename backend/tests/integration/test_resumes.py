@@ -53,6 +53,7 @@ async def test_upload_returns_201(client):
     assert "id" in body
     assert body["filename"] == "resume.pdf"
     assert body["is_active"] is True
+    assert body["is_analyzed"] is False
 
 
 @pytest.mark.asyncio
@@ -158,6 +159,24 @@ async def test_reanalyze_returns_parsed_data(client):
     body = resp.json()
     assert "parsed_data" in body
     assert isinstance(body["parsed_data"]["skills"], list)
+
+
+@pytest.mark.asyncio
+async def test_list_reflects_is_analyzed_after_reanalyze(client):
+    token = await _register_and_login(client)
+    with patch("app.utils.validators.magic") as mock_magic, \
+         patch("app.api.v1.routers.resumes._run_analysis", new_callable=AsyncMock):
+        mock_magic.from_buffer.return_value = "application/pdf"
+        upload = await client.post("/api/v1/resumes", headers=_auth(token), files=_pdf_file())
+    resume_id = upload.json()["id"]
+
+    with patch("app.services.resume_service.extract_text", new_callable=AsyncMock) as mock_extract:
+        mock_extract.return_value = "Test resume content with Python and REST API experience"
+        await client.post(f"/api/v1/resumes/{resume_id}/analyze", headers=_auth(token))
+
+    list_resp = await client.get("/api/v1/resumes", headers=_auth(token))
+    item = next(r for r in list_resp.json()["items"] if r["id"] == resume_id)
+    assert item["is_analyzed"] is True
 
 
 @pytest.mark.asyncio

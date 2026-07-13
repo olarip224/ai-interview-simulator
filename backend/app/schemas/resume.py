@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Any
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, computed_field, field_validator
 
 from app.ai.parsers import ParsedResumeData
 
@@ -15,6 +16,12 @@ class ResumeResponse(BaseModel):
     filename: str
     is_active: bool
     created_at: datetime
+    parsed_data: Any = Field(default=None, exclude=True, repr=False)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def is_analyzed(self) -> bool:
+        return self.parsed_data is not None
 
 
 class ResumeDetailResponse(BaseModel):

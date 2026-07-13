@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import TopNav from '@/components/nav/TopNav'
 import Sidebar from '@/components/nav/Sidebar'
 import { useAuthStore } from '@/store/auth'
@@ -20,10 +21,10 @@ export default function DashboardPage() {
             Your AI-powered interview practice dashboard.
           </p>
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="rounded-lg border bg-card p-6">
+            <Link href="/resumes" className="rounded-lg border bg-card p-6 transition-colors hover:bg-muted">
               <h2 className="font-semibold">Resumes</h2>
               <p className="mt-1 text-sm text-muted-foreground">Upload and analyze your resume with AI feedback.</p>
-            </div>
+            </Link>
             <div className="rounded-lg border bg-card p-6">
               <h2 className="font-semibold">Interview Sessions</h2>
               <p className="mt-1 text-sm text-muted-foreground">Practice with AI-generated behavioral and technical questions.</p>

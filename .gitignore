@@ -35,3 +35,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Local uploaded files
+backend/uploads/
+
+# Local Claude Code plugin state
+.superpowers/
