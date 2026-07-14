@@ -22,7 +22,7 @@ git push
 
 ## Project
 
-FastAPI + PostgreSQL backend for an AI-powered interview simulator. Uses Claude (via `anthropic` SDK) for resume analysis, question generation, and answer feedback. Frontend is a Next.js app (see Frontend Milestones below); F1 and F2 are complete.
+FastAPI + PostgreSQL backend for an AI-powered interview simulator. Uses Claude (via `anthropic` SDK) for resume analysis, question generation, and answer feedback. Frontend is a Next.js app (see Frontend Milestones below); F1–F5 are complete, F6 (polish + deploy) is next.
 
 **Stack:** Python 3.12, FastAPI 0.115, SQLAlchemy 2.0 async, asyncpg, Alembic, Redis, JWT (HS256), bcrypt, pdfplumber, python-magic, Claude API
 
