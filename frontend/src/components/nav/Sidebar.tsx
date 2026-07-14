@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { FileText, MessageSquare, Code2 } from 'lucide-react'
+import { FileText, MessageSquare, Code2, BarChart3 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/resumes', label: 'Resumes', icon: FileText },
   { href: '/interviews', label: 'Interview Sessions', icon: MessageSquare },
   { href: '/challenges', label: 'Coding Challenges', icon: Code2 },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
 ]
 
 export default function Sidebar() {
@@ -30,8 +31,6 @@ export default function Sidebar() {
             {label}
           </Link>
         ))}
-        {/* Remaining nav items added per milestone (F5) */}
-        <div className="h-8 rounded-md bg-muted animate-pulse" />
       </nav>
     </aside>
   )

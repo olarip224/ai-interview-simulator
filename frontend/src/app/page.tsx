@@ -33,6 +33,10 @@ export default function DashboardPage() {
               <h2 className="font-semibold">Coding Challenges</h2>
               <p className="mt-1 text-sm text-muted-foreground">Solve problems and receive instant AI evaluation.</p>
             </Link>
+            <Link href="/analytics" className="rounded-lg border bg-card p-6 transition-colors hover:bg-muted">
+              <h2 className="font-semibold">Analytics</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Track your progress and identify weak topics over time.</p>
+            </Link>
           </div>
         </main>
       </div>

@@ -127,7 +127,7 @@ Unit tests (`tests/unit/`) use `AsyncMock`/`MagicMock` — no real DB or files. 
 
 ## Active Development Branch
 
-`master` — Backend complete (M6). Frontend: F1 (Scaffold + Auth), F2 (Resume System), F3 (Interview Simulator), and F4 (Coding Challenges) complete and merged to `master`. F5 (Analytics Dashboard) planned next.
+`master` — Backend complete (M6). Frontend: F1 (Scaffold + Auth), F2 (Resume System), F3 (Interview Simulator), F4 (Coding Challenges), and F5 (Analytics Dashboard) complete and merged to `master`. F6 (Polish + Deploy) planned next — the last frontend milestone.
 
 ## Backend Milestones
 
@@ -152,7 +152,7 @@ See full breakdown: [`docs/frontend-milestones.md`](docs/frontend-milestones.md)
 | F2: Resume System | Upload, async analysis polling, detail view | Complete (merged to master) |
 | F3: Interview Simulator | Session creation, interview room, feedback summary | Complete (merged to master) |
 | F4: Coding Challenges | Challenge browser, Monaco editor, AI evaluation | Complete (merged to master) |
-| F5: Analytics Dashboard | Progress charts, weak topics, summary stats | Planned |
+| F5: Analytics Dashboard | Progress charts, weak topics, summary stats | Complete (merged to master) |
 | F6: Polish + Deploy | Skeletons, error handling, responsive, live on Vercel | Planned |
 
 ## Frontend Milestone 1 — What Was Added
@@ -218,6 +218,23 @@ See full breakdown: [`docs/frontend-milestones.md`](docs/frontend-milestones.md)
 - **Nav:** Sidebar "Coding Challenges" link added (last F5 placeholder remains), dashboard card on `/` now links to `/challenges`
 - **New deps:** `@monaco-editor/react` (pulls in `monaco-editor` transitively)
 - **Tests:** 29 new frontend vitest tests (139 total) — `starter-code` fallback logic, all 5 query/mutation hooks, `ChallengeCard`/`ChallengeDifficultyBadge`/`EvaluationResultCard`/`LanguageTabs`/`AttemptCard` (including its internal challenge-title lookup), `CodeEditor` (with `@monaco-editor/react`'s `Editor` mocked as a plain textarea — Monaco itself doesn't run meaningfully in jsdom), API wrapper — all passing; typecheck, lint, and `next build` all clean (Monaco confirmed code-split out of the initial bundle via the dynamic import, not bloating First Load JS). No backend changes were needed, so no new backend tests.
+
+## Frontend Milestone 5 — What Was Added
+
+**Analytics Dashboard** — read-only summary stats, a multi-series progress chart, a by-type breakdown, and a weak-topics list. Pure frontend work; the backend analytics engine (Milestone 4 backend) was already complete.
+
+- **Page:** `/analytics` — assembles stat cards, chart, breakdown table, and weak-topics list; empty state (`total_sessions === 0`) shows a CTA to `/interviews` instead of blank charts
+- **Charting:** first `recharts` usage in the codebase, added via `npx shadcn add chart` (installs `components/ui/chart.tsx` — `ChartContainer`/`ChartTooltip`/`ChartLegend`/`ChartConfig`). No conflict with the rest of shadcn's `@base-ui/react`-based primitives since Recharts is independent SVG/D3 rendering.
+- **Palette:** ran the `dataviz` skill before writing any chart code — the project's `--chart-1..5` CSS vars in `globals.css` were a placeholder monochrome ramp; replaced with a validated categorical palette (`scripts/validate_palette.js`, CVD-safe fixed order: blue/aqua/yellow/green/violet) checked against this project's actual light (`#ffffff`) and dark (~`#171717`) card surfaces, not the skill's generic defaults.
+- **Progress chart is multi-series, not a single line** (per explicit product decision): one `<Line>` per interview type (swe/ml/behavioral/cybersecurity) that actually appears in the user's history — `components/analytics/progress-data.ts`'s `getPresentInterviewTypes` filters a fixed canonical order (reusing `INTERVIEW_TYPE_LABELS` from `components/interviews/labels.ts` — same enum/domain, deliberate cross-feature reuse) down to only types present, and `toChartRows` builds one row per session with only that session's own type-key set — other types stay `undefined` on that row so Recharts draws a gap, not a misleading zero, for types not practiced at that point.
+- **Backend ordering gotcha worked around:** `GET /analytics/me/progress` returns newest-first by an internal insertion timestamp, not `completed_at`, and isn't guaranteed sorted at all for charting purposes — `sortProgressAscending` re-sorts client-side before anything is charted.
+- **Weak topics:** sourced from the dedicated `GET /me/weak-topics` endpoint (has per-topic counts) rather than summary's capped, count-less `top_weak_topics` field; copy says "mentioned most often" since the data is frequency-ranked, not score-ranked — no per-topic score exists anywhere in the backend. Uncapped server response is capped to top 10 client-side (`MAX_DISPLAYED_TOPICS`) since `weak_topics` is raw free-text (not a fixed taxonomy) and can get long-tail noisy.
+- **No fabricated stats:** summary's only real fields are `total_sessions` + four avg-score fields (overall/technical/communication/correctness) — there is no "total questions answered" anywhere in the analytics contract despite the milestone doc implying one; `SummaryStatsCards` only surfaces what actually exists.
+- **Testing Recharts under jsdom:** jsdom has no `ResizeObserver`, and Recharts' `ResponsiveContainer` (which shadcn's `ChartContainer` wraps) waits for a resize callback reporting a non-zero size before rendering any children — a no-op stub isn't enough. Added a real polyfill to `vitest.setup.ts` whose `observe()` fires the callback once (via `queueMicrotask`) with a fixed 320×200 size, letting `ProgressChart` render for real in tests (`await screen.findByText(...)`) instead of needing a full Recharts mock.
+- **Data layer:** `types/analytics.ts` (reuses `InterviewType` from `types/interview.ts`), `lib/analytics-api.ts`, `hooks/analytics/*` (`useSummary`, `useProgress`, `useWeakTopics` — all three backend endpoints take no params and aren't paginated, so `keys.ts` has no list/detail split, just `analyticsKeys.summary()/progress()/weakTopics()`)
+- **Nav:** Sidebar "Analytics" link added — this was the last remaining placeholder, so the Sidebar nav list is now fully real; dashboard gained a genuine 4th card (no existing inert div to convert this time, unlike F2–F4)
+- **New deps:** `recharts` (via the shadcn `chart` component)
+- **Tests:** 23 new frontend vitest tests (162 total) — `progress-data.ts` pure helpers (sort, present-types, row-shaping with gaps), all 3 query hooks, stat cards/breakdown table/weak-topics list, `ProgressChart` rendered for real (not mocked) against the `ResizeObserver` polyfill, API wrapper — all passing; typecheck, lint, and `next build` all clean (`/analytics` prerenders fully static, unlike F4's Monaco-dependent dynamic routes). No backend changes were needed, so no new backend tests.
 
 ## Milestone 6 — What Was Added
 
