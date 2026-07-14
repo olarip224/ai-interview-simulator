@@ -127,7 +127,7 @@ Unit tests (`tests/unit/`) use `AsyncMock`/`MagicMock` — no real DB or files. 
 
 ## Active Development Branch
 
-`master` — Backend complete (M6). Frontend: F1 (Scaffold + Auth), F2 (Resume System), and F3 (Interview Simulator) complete and merged to `master`. F4 (Coding Challenges) planned next.
+`master` — Backend complete (M6). Frontend: F1 (Scaffold + Auth), F2 (Resume System), F3 (Interview Simulator), and F4 (Coding Challenges) complete and merged to `master`. F5 (Analytics Dashboard) planned next.
 
 ## Backend Milestones
 
@@ -151,7 +151,7 @@ See full breakdown: [`docs/frontend-milestones.md`](docs/frontend-milestones.md)
 | F1: Scaffold + Auth | Login/register, protected routing, auth token rotation | Complete (merged to master) |
 | F2: Resume System | Upload, async analysis polling, detail view | Complete (merged to master) |
 | F3: Interview Simulator | Session creation, interview room, feedback summary | Complete (merged to master) |
-| F4: Coding Challenges | Challenge browser, Monaco editor, AI evaluation | Planned |
+| F4: Coding Challenges | Challenge browser, Monaco editor, AI evaluation | Complete (merged to master) |
 | F5: Analytics Dashboard | Progress charts, weak topics, summary stats | Planned |
 | F6: Polish + Deploy | Skeletons, error handling, responsive, live on Vercel | Planned |
 
@@ -202,6 +202,22 @@ See full breakdown: [`docs/frontend-milestones.md`](docs/frontend-milestones.md)
 - **New shadcn components:** `dialog`, `select`, `textarea` (no new npm deps — all backed by the already-installed `@base-ui/react`)
 - **Tests:** 52 new frontend vitest tests (110 total) — pure logic (`room-state`, `countdown`, `submit-helpers`), `useCountdown` under fake timers (tick/expire-once/pause), all 7 query/mutation hooks, `AnswerForm`'s manual/auto-submit/retry paths under fake timers, dialogs, cards — all passing; typecheck, lint, and `next build` all clean. No backend changes were needed, so no new backend tests.
 - **Note:** combining `vi.useFakeTimers()` with `@testing-library/react`'s `waitFor`/`findByText` (which poll on real timers) hangs — the timer-dependent `AnswerForm` tests use `await vi.advanceTimersByTimeAsync(...)` inside `act()` instead, and assert directly rather than through `waitFor`, once advanced.
+
+## Frontend Milestone 4 — What Was Added
+
+**Coding Challenges** — challenge browser, embedded Monaco editor with a 4-language selector, AI evaluation, and attempt history. Pure frontend work; the backend coding-challenges engine (Milestone 5 backend) was already complete.
+
+- **Pages:** `/challenges` (browse list, difficulty + tag filters, pagination), `/challenges/[id]` (description/examples/constraints + editor + submit, evaluation renders inline — no redirect), `/challenges/me/attempts` (history, optional `?challenge_id=` filter), `/challenges/me/attempts/[id]` (read-only code replay + full feedback)
+- **Monaco editor:** first `@monaco-editor/react` usage in the codebase (new dep) and the first `next/dynamic(..., { ssr: false })` usage — `components/challenges/CodeEditor.tsx` wraps it with a `Skeleton` loading fallback; reused as-is in read-only mode (`options.readOnly`) for attempt-detail code replay instead of a second syntax-highlighting component
+- **Language selector:** `LanguageTabs` (shadcn `tabs`, net-new primitive alongside `skeleton`) always shows all 4 fixed languages (Python/JavaScript/TypeScript/Go) regardless of what a challenge's `starter_code` actually has — today's 5 seeded challenges only ever have `python`/`javascript` keys. `components/challenges/starter-code.ts`'s `getStarterCodeForLanguage` falls back to a `// Write your {language} solution here` placeholder for the rest. Per-language code drafts are kept in local `Record<language, code>` state so switching tabs doesn't lose in-progress edits in the other languages.
+- **Three distinct feedback shapes, not one shared type:** the submit response nests scores under `feedback: {...}`; the attempt-list item has only `overall_score`/`is_correct`; the attempt-detail response flattens the same score/text/array fields directly onto the object. Modeled as three separate TS interfaces in `types/challenge.ts` (`AttemptFeedback`, `Attempt`, `AttemptDetail`) rather than coercing them into one shape.
+- **Evaluation display:** `EvaluationResultCard` (mirrors F3's `FeedbackCard`) takes flattened primitive props (not a nested feedback object) so both the submit-result page and the attempt-detail replay page can pass their differently-shaped data through the same component without an adapter.
+- **Attempt history titles:** `GET /challenges/me/attempts` list items only carry `challenge_id`, no title — `AttemptCard` does a per-item `useChallenge(challenge_id)` lookup (hits the public unauthenticated detail endpoint; TanStack Query caches/dedupes repeats) rather than adding a title field client-side.
+- **Backend gaps worked around:** submitting is allowed for any `language` string and any starter-code mismatch (no enum/whitelist enforced server-side); an unparseable AI response is silently stored as a neutral-default attempt (`overall_score: 5.0`, `is_correct: false`, empty text/arrays) with no error flag — the UI just renders whatever comes back, same as F2/F3's AI-degradation handling; inactive vs. missing challenge are both a plain 404 (no distinct "retired" messaging is possible).
+- **Data layer:** `types/challenge.ts`, `lib/challenges-api.ts`, `hooks/challenges/*` (`useChallenges`, `useChallenge`, `useAttempts`, `useAttempt`, `useSubmitAttempt`), two independent query-key factories in `hooks/challenges/keys.ts` (`challengeKeys`, `attemptKeys`) since challenges and attempts are separate top-level resources under this feature
+- **Nav:** Sidebar "Coding Challenges" link added (last F5 placeholder remains), dashboard card on `/` now links to `/challenges`
+- **New deps:** `@monaco-editor/react` (pulls in `monaco-editor` transitively)
+- **Tests:** 29 new frontend vitest tests (139 total) — `starter-code` fallback logic, all 5 query/mutation hooks, `ChallengeCard`/`ChallengeDifficultyBadge`/`EvaluationResultCard`/`LanguageTabs`/`AttemptCard` (including its internal challenge-title lookup), `CodeEditor` (with `@monaco-editor/react`'s `Editor` mocked as a plain textarea — Monaco itself doesn't run meaningfully in jsdom), API wrapper — all passing; typecheck, lint, and `next build` all clean (Monaco confirmed code-split out of the initial bundle via the dynamic import, not bloating First Load JS). No backend changes were needed, so no new backend tests.
 
 ## Milestone 6 — What Was Added
 

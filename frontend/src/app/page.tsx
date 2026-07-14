@@ -29,10 +29,10 @@ export default function DashboardPage() {
               <h2 className="font-semibold">Interview Sessions</h2>
               <p className="mt-1 text-sm text-muted-foreground">Practice with AI-generated behavioral and technical questions.</p>
             </Link>
-            <div className="rounded-lg border bg-card p-6">
+            <Link href="/challenges" className="rounded-lg border bg-card p-6 transition-colors hover:bg-muted">
               <h2 className="font-semibold">Coding Challenges</h2>
               <p className="mt-1 text-sm text-muted-foreground">Solve problems and receive instant AI evaluation.</p>
-            </div>
+            </Link>
           </div>
         </main>
       </div>
