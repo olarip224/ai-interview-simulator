@@ -13,9 +13,13 @@ vi.mock('@/store/auth', () => ({
     })),
   },
 }))
+vi.mock('sonner', () => ({
+  toast: { error: vi.fn() },
+}))
 
 const { default: apiClient } = await import('@/lib/api')
 const { useAuthStore } = await import('@/store/auth')
+const { toast } = await import('sonner')
 
 const getMockState = (overrides = {}) => ({
   accessToken: null,
@@ -154,5 +158,25 @@ describe('response interceptor — 401 handling', () => {
 
     const error = { response: { status: 500 }, config: { _retry: false } }
     await expect(errorHandler(error)).rejects.toEqual(error)
+  })
+})
+
+describe('response interceptor — global 429 toast', () => {
+  it('fires a toast on a 429 response, in addition to rejecting', async () => {
+    const handlers = (apiClient.interceptors.response as any).handlers
+    const errorHandler = handlers[handlers.length - 1].rejected
+
+    const error = { response: { status: 429 }, config: { _retry: false } }
+    await expect(errorHandler(error)).rejects.toEqual(error)
+    expect(toast.error).toHaveBeenCalledOnce()
+  })
+
+  it('does not fire the 429 toast for other status codes', async () => {
+    const handlers = (apiClient.interceptors.response as any).handlers
+    const errorHandler = handlers[handlers.length - 1].rejected
+
+    const error = { response: { status: 500 }, config: { _retry: false } }
+    await expect(errorHandler(error)).rejects.toEqual(error)
+    expect(toast.error).not.toHaveBeenCalled()
   })
 })

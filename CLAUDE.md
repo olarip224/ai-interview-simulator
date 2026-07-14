@@ -22,7 +22,7 @@ git push
 
 ## Project
 
-FastAPI + PostgreSQL backend for an AI-powered interview simulator. Uses Claude (via `anthropic` SDK) for resume analysis, question generation, and answer feedback. Frontend is a Next.js app (see Frontend Milestones below); F1–F5 are complete, F6 (polish + deploy) is next.
+FastAPI + PostgreSQL backend for an AI-powered interview simulator. Uses Claude (via `anthropic` SDK) for resume analysis, question generation, and answer feedback. Frontend is a Next.js app (see Frontend Milestones below); all six milestones (F1–F6) are complete — only the account-level Railway/Vercel deploy steps remain, see `docs/deployment.md`.
 
 **Stack:** Python 3.12, FastAPI 0.115, SQLAlchemy 2.0 async, asyncpg, Alembic, Redis, JWT (HS256), bcrypt, pdfplumber, python-magic, Claude API
 
@@ -127,7 +127,7 @@ Unit tests (`tests/unit/`) use `AsyncMock`/`MagicMock` — no real DB or files. 
 
 ## Active Development Branch
 
-`master` — Backend complete (M6). Frontend: F1 (Scaffold + Auth), F2 (Resume System), F3 (Interview Simulator), F4 (Coding Challenges), and F5 (Analytics Dashboard) complete and merged to `master`. F6 (Polish + Deploy) planned next — the last frontend milestone.
+`master` — Backend complete (M6). Frontend: F1–F6 all complete (F1 Scaffold+Auth, F2 Resumes, F3 Interviews, F4 Coding Challenges, F5 Analytics, F6 Polish+Deploy). Every planned milestone is done — remaining work is the account-level deploy steps in `docs/deployment.md` (Railway + Vercel), which need credentials this session doesn't have.
 
 ## Backend Milestones
 
@@ -144,7 +144,7 @@ Unit tests (`tests/unit/`) use `AsyncMock`/`MagicMock` — no real DB or files. 
 
 See full breakdown: [`docs/frontend-milestones.md`](docs/frontend-milestones.md)
 
-**Tech stack:** Next.js 15, TypeScript, Tailwind CSS, shadcn/ui, TanStack Query, Zustand, Monaco Editor, Vitest, Playwright — deployed to Vercel.
+**Tech stack:** Next.js 15, TypeScript, Tailwind CSS, shadcn/ui, TanStack Query, Zustand, Monaco Editor, Recharts, Vitest, Playwright — deployed to Vercel.
 
 | Milestone | Deliverable | Status |
 |---|---|---|
@@ -153,7 +153,7 @@ See full breakdown: [`docs/frontend-milestones.md`](docs/frontend-milestones.md)
 | F3: Interview Simulator | Session creation, interview room, feedback summary | Complete (merged to master) |
 | F4: Coding Challenges | Challenge browser, Monaco editor, AI evaluation | Complete (merged to master) |
 | F5: Analytics Dashboard | Progress charts, weak topics, summary stats | Complete (merged to master) |
-| F6: Polish + Deploy | Skeletons, error handling, responsive, live on Vercel | Planned |
+| F6: Polish + Deploy | Skeletons, error handling, responsive, live on Vercel | Complete (merged to master); deploy pending — see `docs/deployment.md` |
 
 ## Frontend Milestone 1 — What Was Added
 
@@ -235,6 +235,25 @@ See full breakdown: [`docs/frontend-milestones.md`](docs/frontend-milestones.md)
 - **Nav:** Sidebar "Analytics" link added — this was the last remaining placeholder, so the Sidebar nav list is now fully real; dashboard gained a genuine 4th card (no existing inert div to convert this time, unlike F2–F4)
 - **New deps:** `recharts` (via the shadcn `chart` component)
 - **Tests:** 23 new frontend vitest tests (162 total) — `progress-data.ts` pure helpers (sort, present-types, row-shaping with gaps), all 3 query hooks, stat cards/breakdown table/weak-topics list, `ProgressChart` rendered for real (not mocked) against the `ResizeObserver` polyfill, API wrapper — all passing; typecheck, lint, and `next build` all clean (`/analytics` prerenders fully static, unlike F4's Monaco-dependent dynamic routes). No backend changes were needed, so no new backend tests.
+
+## Frontend Milestone 6 — What Was Added
+
+**Polish + Deploy prep** — cross-cutting pass over all 11 existing pages (loading, error, responsive, a11y) plus deployment tooling. Unlike F1–F5, this touched every existing feature rather than adding a new one; no backend changes were needed.
+
+- **Shared dashboard shell:** introduced `app/(dashboard)/layout.tsx` (Next.js route group — doesn't change any URL) rendering `TopNav` + `Sidebar` + `<main>` once; moved all 11 existing pages (`/`, `/resumes/**`, `/interviews/**`, `/challenges/**`, `/analytics`) under it and deleted their individually hand-rolled wrapper markup. `login`/`register` stay siblings outside the group (no dashboard chrome). This is what made the mobile-nav fix a one-file change instead of an 11-file one.
+- **Responsive mobile nav:** added shadcn `sheet` (new primitive). `Sidebar` is now `hidden lg:block`; `TopNav` gained a hamburger button (`lg:hidden`) opening a `Sheet` drawer with the same links. Extracted `components/nav/nav-items.ts` as the single source both `Sidebar` and the mobile drawer render from, so they can't drift. Fixed a concrete overflow bug found during the move: `challenges/page.tsx`'s filter row (`w-40` Select + `w-48` Input, no wrap) forced horizontal scroll on narrow viewports.
+- **Loading skeletons:** `components/skeletons/{CardGridSkeleton,DetailSkeleton,StatCardsSkeleton}.tsx` — three reusable shapes cover all 11 pages (list pages share `CardGridSkeleton`; unique detail pages use `DetailSkeleton` with page-specific block heights; analytics uses `StatCardsSkeleton`) rather than one bespoke skeleton per page. Replaced every `{isLoading && <p>Loading…</p>}` across the app; goal was "no layout shift," not pixel-perfect fidelity.
+- **Error handling:** new `lib/errors.ts` exporting `getApiErrorMessage(error, {rateLimitMessage, fallbackMessage})`, replacing three near-identical 429-detection helpers that had accumulated independently in `resumes/upload-helpers.ts` and both `interviews/` and `challenges/submit-helpers.ts` (each now a 4-line wrapper calling the shared helper — call sites unchanged). Fixed two real gaps found by audit: the interview room (`interviews/[id]/page.tsx`) never checked `isError` on either of its two hooks (a fetch failure rendered a blank page); `analytics/page.tsx` only checked `useSummary`'s `isError`, silently swallowing `useProgress`/`useWeakTopics` failures. Added `app/error.tsx` and `app/global-error.tsx` (neither existed — first App Router error boundaries in the project). Added a 429 case to `lib/api.ts`'s response interceptor that fires a `sonner` toast globally, additive to (not replacing) each feature's existing inline error message.
+- **Accessibility:** audited first rather than assumed — Base UI's `Dialog`/`AlertDialog` already provide focus-trap + return-focus for free (`FloatingFocusManager`, confirmed from `node_modules/@base-ui/react` source), and focus-visible styling is already global via shadcn's per-component classes. The one real gap was a missing skip-link, added to `(dashboard)/layout.tsx` (`sr-only focus:not-sr-only`, targets `#main-content`).
+- **Playwright E2E:** `@playwright/test` added (first use in the project). `frontend/e2e/smoke.spec.ts` — one test: register → upload a resume → run a full interview (generate question, answer, next question, end) → view analytics, `180s` timeout since question generation/feedback hit the real Claude API. `.github/workflows/e2e-smoke.yml` runs it manually/post-deploy against a live URL, not on every push (it needs a real target).
+- **Environment/tooling gotchas hit while verifying this milestone** (all resolved, worth remembering):
+  - `vitest.config.ts` needed `exclude: [...configDefaults.exclude, 'e2e/**']` — Vitest was picking up the new Playwright spec file as one of its own tests and failing on `test.setTimeout()` (a Playwright-only API). Extending `configDefaults.exclude` rather than replacing it, so `node_modules`/etc. stay excluded too.
+  - The first live Playwright run (against `next dev`) failed with the register form doing a native GET submission (fields appended to the URL) — a hydration race from Next dev's on-demand per-route compilation, not a real app bug. Re-running against a production `next build && next start` (which is what "passes against production" actually means anyway) fixed it.
+  - Playwright's downloaded Chromium needs `libnss3`/`libnspr4`/`libasound2`/etc., and `playwright install --with-deps` needs root, which isn't available here. Worked around it without sudo: `apt-get download` (fetches `.deb`s without installing) + `dpkg -x` (extracts a `.deb`'s contents to an arbitrary directory, no root needed) into `~/.playwright-libs/extracted`, then run tests with `LD_LIBRARY_PATH` pointing at `.../usr/lib/x86_64-linux-gnu`. Use `/home` for anything that needs to survive between commands, not `/tmp` — this sandbox appears to periodically reset `/tmp` and stop backgrounded Docker containers/processes independent of anything this session did.
+  - Caught a real near-miss: a real `ANTHROPIC_API_KEY` was pasted into `backend/.env.example` (git-tracked template) instead of `backend/.env` (gitignored, actually loaded) while setting up credentials for live verification. Caught via `git diff` before any commit — moved the key to `.env`, restored `.env.example`'s placeholder, generated a real `SECRET_KEY` for `.env` too (was still the startup-validation-rejected placeholder). Nothing was ever committed or pushed with a real secret in it.
+- **Live verification (not just mocks/unit tests) — first time in this project**: with Docker Desktop + WSL integration available, ran the actual stack — `docker compose up -d postgres redis`, real `uvicorn` backend, production Next.js build via `next start`, and the Playwright smoke test end-to-end against it, including real Claude API calls for interview questions/feedback and resume analysis. Also ran the backend's full test suite (134 tests: unit + integration, not just unit as in F2–F5) against the real DB. Both fully green.
+- **Deployment runbook:** `docs/deployment.md` — step-by-step for the account-level actions this session can't perform (no Railway/Vercel credentials, and provisioning real cloud infra/secrets isn't something to do unilaterally regardless): create the Railway project (picks up `railway.toml`/`backend/docker/Dockerfile`), provision Postgres+Redis, set production env vars, run migrations; connect the GitHub repo to Vercel (root dir `frontend/`), set `NEXT_PUBLIC_API_URL`, deploy; circle back and update Railway's `CORS_ORIGINS` with the resulting Vercel URL.
+- **Tests:** 20 new/changed frontend vitest tests (182 total) — `lib/errors.ts`, the three skeleton components, `app/error.tsx`'s retry button, mobile-nav Sheet contents matching `nav-items.ts`. Full suite + `tsc` + `eslint` + `next build` all clean.
 
 ## Milestone 6 — What Was Added
 

@@ -1,4 +1,5 @@
 import type { FileRejection } from 'react-dropzone'
+import { getApiErrorMessage } from '@/lib/errors'
 
 export function getUploadRejectionMessage(fileRejections: FileRejection[]): string | null {
   if (fileRejections.length === 0) return null
@@ -9,8 +10,8 @@ export function getUploadRejectionMessage(fileRejections: FileRejection[]): stri
 }
 
 export function getUploadErrorMessage(error: unknown): string {
-  const response = (error as { response?: { status?: number; data?: { detail?: unknown } } })?.response
-  if (response?.status === 429) return 'Too many uploads — try again in a minute.'
-  if (typeof response?.data?.detail === 'string') return response.data.detail
-  return 'Upload failed. Please try again.'
+  return getApiErrorMessage(error, {
+    rateLimitMessage: 'Too many uploads — try again in a minute.',
+    fallbackMessage: 'Upload failed. Please try again.',
+  })
 }

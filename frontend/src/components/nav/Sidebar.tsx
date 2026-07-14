@@ -2,21 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { FileText, MessageSquare, Code2, BarChart3 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-const navItems = [
-  { href: '/resumes', label: 'Resumes', icon: FileText },
-  { href: '/interviews', label: 'Interview Sessions', icon: MessageSquare },
-  { href: '/challenges', label: 'Coding Challenges', icon: Code2 },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-]
+import { navItems } from '@/components/nav/nav-items'
 
 export default function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="w-56 border-r bg-background min-h-full flex-shrink-0">
+    <aside className="hidden w-56 flex-shrink-0 border-r bg-background min-h-full lg:block">
       <nav className="flex flex-col gap-1 p-4">
         {navItems.map(({ href, label, icon: Icon }) => (
           <Link

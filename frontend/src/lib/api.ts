@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { InternalAxiosRequestConfig } from 'axios'
+import { toast } from 'sonner'
 import { useAuthStore } from '@/store/auth'
 
 declare module 'axios' {
@@ -34,6 +35,12 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Global 429 toast — supplements (doesn't replace) any feature-specific inline
+    // error message the caller shows, so this never regresses existing handling.
+    if (error.response?.status === 429) {
+      toast.error('Too many requests — please slow down and try again shortly.')
+    }
+
     const originalConfig: InternalAxiosRequestConfig = error.config ?? {}
 
     if (error.response?.status !== 401 || originalConfig._retry) {
