@@ -127,7 +127,7 @@ Unit tests (`tests/unit/`) use `AsyncMock`/`MagicMock` — no real DB or files. 
 
 ## Active Development Branch
 
-`master` — Backend complete (M6). Frontend: F1 (Scaffold + Auth) and F2 (Resume System) complete and merged to `master`. F3 (Interview Simulator) planned next.
+`master` — Backend complete (M6). Frontend: F1 (Scaffold + Auth), F2 (Resume System), and F3 (Interview Simulator) complete and merged to `master`. F4 (Coding Challenges) planned next.
 
 ## Backend Milestones
 
@@ -150,7 +150,7 @@ See full breakdown: [`docs/frontend-milestones.md`](docs/frontend-milestones.md)
 |---|---|---|
 | F1: Scaffold + Auth | Login/register, protected routing, auth token rotation | Complete (merged to master) |
 | F2: Resume System | Upload, async analysis polling, detail view | Complete (merged to master) |
-| F3: Interview Simulator | Session creation, interview room, feedback summary | Planned |
+| F3: Interview Simulator | Session creation, interview room, feedback summary | Complete (merged to master) |
 | F4: Coding Challenges | Challenge browser, Monaco editor, AI evaluation | Planned |
 | F5: Analytics Dashboard | Progress charts, weak topics, summary stats | Planned |
 | F6: Polish + Deploy | Skeletons, error handling, responsive, live on Vercel | Planned |
@@ -185,6 +185,23 @@ See full breakdown: [`docs/frontend-milestones.md`](docs/frontend-milestones.md)
 - **New deps:** `react-dropzone`, `sonner` (toasts, wired into root layout via `<Toaster />`), `next-themes`
 - **Tests:** 58 frontend vitest tests across hooks/components/lib for this milestone (polling logic, stall detection, upload rejection/error messages, delete confirmation flow, API wrappers) — all passing; typecheck, lint, and `next build` all clean
 - **Note:** integration tests for the new `is_analyzed` field (`test_resumes.py`) need a real Postgres instance (`JSONB`/`UUID` columns aren't SQLite-compatible) — verified instead via the full unit suite (83 passing) plus a manual `model_validate` check against a fake ORM object
+
+## Frontend Milestone 3 — What Was Added
+
+**Interview Simulator** — session creation, the interview room loop, and a feedback summary. Pure frontend work; the backend interview engine (Milestone 3 backend) was already complete.
+
+- **Pages:** `/interviews` (list, status filter, pagination), `/interviews/[id]` (interview room), `/interviews/[id]/feedback` (summary)
+- **Create session:** `CreateSessionDialog` — shadcn `Dialog` (net-new primitive, added alongside `Select`/`Textarea`) with type/difficulty/optional-resume `Select`s; the resume dropdown reuses F2's `useResumes({limit:100})` hook as-is. On success, navigates straight into the new session's room.
+- **Room state machine:** driven off `GET /interviews/sessions/{id}/feedback` (`useSessionFeedback`), not the bare session detail endpoint — `per_question` is the only source that reflects per-question answered/unanswered state. Pure derivation in `components/interviews/room-state.ts` (`getCurrentQuestionState`) maps the last `per_question` item to `no-questions | awaiting-answer | feedback-shown`, which the room page switches on to render `QuestionCard`+`AnswerForm`, or `FeedbackCard`+"Next question"/"End interview".
+- **Answer timer:** `hooks/interviews/useCountdown.ts` — generic 1s-tick countdown hook (setInterval-based, ref-guarded so `onExpire` fires exactly once regardless of re-renders); `AnswerForm` mounts it keyed on `question.id` so switching questions resets both the textarea and the timer via remount rather than manual reset plumbing. `DEFAULT_QUESTION_TIME_LIMIT_SECONDS = 180`, `TIMER_WARNING_THRESHOLD_SECONDS = 30` (red/pulse styling below 30s) in `hooks/interviews/countdown.ts`.
+- **Auto-submit on timeout:** `AnswerForm` submits on manual click **or** timer expiry through the same code path — first attempt (whichever fires first) permanently freezes the countdown and disables the textarea, preventing a manual-click/expiry double-submit race. A failed submit (network/429) shows an inline retry that resubmits the exact same captured text and elapsed time, without restarting the timer.
+- **End interview:** `EndInterviewDialog` (shadcn `alert-dialog`, mirrors `ResumeDeleteDialog`) always available in the room, with copy that adapts when the current question is still unanswered — the backend allows completing with zero answers, so this confirm is a pure client-side guardrail, not a backend requirement.
+- **Backend gaps worked around defensively:** `generate_question` doesn't block on the prior question being unanswered, and there's no `abandoned`-status endpoint despite the enum value existing — the frontend only exposes "Next question" once feedback is showing, and simply leaves an untouched session `active` forever (revisiting the room reconstructs full state from `useSessionFeedback`, nothing is lost).
+- **Data layer:** `types/interview.ts`, `lib/interviews-api.ts`, `hooks/interviews/*` (`useSessions`, `useSession`, `useSessionFeedback`, `useCreateSession`, `useGenerateQuestion`, `useSubmitAnswer`, `useCompleteSession`), query keys in `hooks/interviews/keys.ts`
+- **Nav:** Sidebar "Interview Sessions" link added (`F4–F5` still pending), dashboard card on `/` now links to `/interviews`
+- **New shadcn components:** `dialog`, `select`, `textarea` (no new npm deps — all backed by the already-installed `@base-ui/react`)
+- **Tests:** 52 new frontend vitest tests (110 total) — pure logic (`room-state`, `countdown`, `submit-helpers`), `useCountdown` under fake timers (tick/expire-once/pause), all 7 query/mutation hooks, `AnswerForm`'s manual/auto-submit/retry paths under fake timers, dialogs, cards — all passing; typecheck, lint, and `next build` all clean. No backend changes were needed, so no new backend tests.
+- **Note:** combining `vi.useFakeTimers()` with `@testing-library/react`'s `waitFor`/`findByText` (which poll on real timers) hangs — the timer-dependent `AnswerForm` tests use `await vi.advanceTimersByTimeAsync(...)` inside `act()` instead, and assert directly rather than through `waitFor`, once advanced.
 
 ## Milestone 6 — What Was Added
 
