@@ -45,7 +45,12 @@ async def run_async_migrations() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-        connect_args={"timeout": 10},
+        connect_args={
+            "timeout": 10,
+            # Fail fast instead of hanging forever if a stale/orphaned session
+            # from a previous killed deploy is still holding a lock.
+            "server_settings": {"lock_timeout": "15000", "statement_timeout": "20000"},
+        },
     )
     try:
         async with connectable.connect() as connection:
