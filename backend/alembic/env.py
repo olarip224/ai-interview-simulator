@@ -45,10 +45,16 @@ async def run_async_migrations() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args={"timeout": 10},
     )
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
-    await connectable.dispose()
+    try:
+        async with connectable.connect() as connection:
+            await connection.run_sync(do_run_migrations)
+    except Exception:
+        print("MIGRATION CONNECTION FAILED — see traceback below", flush=True)
+        raise
+    finally:
+        await connectable.dispose()
 
 
 def run_migrations_online() -> None:
