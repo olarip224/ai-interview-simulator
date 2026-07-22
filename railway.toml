@@ -3,6 +3,6 @@ builder = "dockerfile"
 dockerfilePath = "backend/docker/Dockerfile"
 
 [deploy]
-startCommand = "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 4"
+startCommand = "alembic upgrade head && echo 'DIAG: migration done, starting uvicorn now' && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
